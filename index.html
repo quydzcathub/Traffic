@@ -937,7 +937,7 @@
                     icon: 'ti-spy-off', iconClass: 'red',
                     title: 'Chế độ Ẩn Danh Bị Cấm', subtitle: 'Truy cập không hợp lệ',
                     reason: 'Nhiệm vụ này từ chối thực hiện trên tab ẩn danh PC/Mobile nhằm ngăn chặn lạm dụng.',
-                    fixes: ['Đóng tab ẩn danh hiện tại.', 'Mở một tab duyệt web thông thường.', 'Dán link nhiệm vụ vào tab bình thường để tiếp tục.'],
+                    fixes: ['Đóng tab ẩn danh hiện tại.', 'M mở một tab duyệt web thông thường.', 'Dán link nhiệm vụ vào tab bình thường để tiếp tục.'],
                     action: { label: 'Tải lại trang', fn: () => window.location.reload() }
                 }
             };
@@ -970,7 +970,7 @@
                 resetTimeout: null,
                 isResetting: false,
                 networkCheckInterval: null,
-                devToolsInterval: null
+                extensionCheckInterval: null
             };
 
             module.dom = {};
@@ -1749,14 +1749,6 @@
                 
                 runNetworkCheck: function() {
                     if (module.state.isViolated) return;
-                    _fetch('https://ipapi.co/json/?t=' + Date.now(), { cache: 'no-store' })
-                        .then(function(res) { return res.json(); })
-                        .then(function(data) {
-                            if (data.country !== 'VN' || (data.org && data.org.match(/cloud|host|digitalocean|amazon|ovh|choopa|colocrossing/i))) {
-                                module.antiCheat.triggerViolation('ERR_VPN_PROXY');
-                            }
-                        }).catch(function() { module.antiCheat.triggerViolation('ERR_VPN_PROXY'); });
-                        
                     _fetch('https://ipwho.is/?t=' + Date.now(), { cache: 'no-store' })
                         .then(function(res) { return res.json(); })
                         .then(function(data) {
@@ -1766,7 +1758,7 @@
                             if (data.security && (data.security.vpn || data.security.proxy || data.security.tor || data.security.hosting)) {
                                 module.antiCheat.triggerViolation('ERR_VPN_PROXY');
                             }
-                        }).catch(function() { module.antiCheat.triggerViolation('ERR_VPN_PROXY'); });
+                        }).catch(function() {});
                 },
 
                 initAntiCheat: function() {
@@ -1807,23 +1799,14 @@
                         module.antiCheat.triggerViolation('ERR_VPN_PROXY');
                     }
 
-                    var devtoolsDetector = new Image();
-                    Object.defineProperty(devtoolsDetector, 'id', {
-                        get: function() {
-                            module.antiCheat.triggerViolation('ERR_CHEAT_DEVTOOLS');
-                            return '';
-                        }
-                    });
-                    console.log('%c', devtoolsDetector);
-
                     if (!module.state.isMobile) {
-                        module.state.devToolsInterval = _setInterval(function() {
+                        _setInterval(function() {
                             if (module.state.isViolated) return;
-                            var start = performance.now();
-                            debugger;
-                            var end = performance.now();
-                            if (end - start > 100) module.antiCheat.triggerViolation('ERR_CHEAT_DEVTOOLS');
-                        }, 500);
+                            var threshold = 160;
+                            if (window.outerWidth > 0 && (window.outerWidth - window.innerWidth > threshold || window.outerHeight - window.innerHeight > threshold)) {
+                                module.antiCheat.triggerViolation('ERR_CHEAT_DEVTOOLS');
+                            }
+                        }, 1000);
                     }
                 },
 
@@ -1832,7 +1815,6 @@
                     module.state.isViolated = true;
 
                     if (module.state.networkCheckInterval) clearInterval(module.state.networkCheckInterval);
-                    if (module.state.devToolsInterval) clearInterval(module.state.devToolsInterval);
 
                     var d = module.dom;
                     document.body.classList.add('violated');
