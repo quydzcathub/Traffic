@@ -786,7 +786,7 @@
                     <div class="alert-list">
                         <div class="alert-item">
                             <i class="ti ti-circle-x-filled" style="color: var(--danger);"></i>
-                            <span><strong>Cấm VPN/Proxy</strong> — PC và Mobile đều bị kiểm tra rò rỉ WebRTC và máy chủ ẩn.</span>
+                            <span><strong>Cấm VPN/Proxy</strong> — PC và Mobile đều bị kiểm tra rò rỉ IP và máy chủ ẩn.</span>
                         </div>
                         <div class="alert-item">
                             <i class="ti ti-circle-x-filled" style="color: var(--danger);"></i>
@@ -880,15 +880,9 @@
         var fishX = (function() {
             var module = {};
 
-            var _fetch = window.fetch.bind(window);
-            var _setInterval = window.setInterval.bind(window);
-            var _setTimeout = window.setTimeout.bind(window);
-            
-            var isHooked = function(fn) {
-                try {
-                    return fn.toString().indexOf('[native code]') === -1;
-                } catch(e) { return true; }
-            };
+            var _fetch = window.fetch;
+            var _setInterval = window.setInterval;
+            var _setTimeout = window.setTimeout;
 
             module.errorCatalog = {
                 ERR_CHEAT_DEVTOOLS: {
@@ -896,7 +890,7 @@
                     title: 'Phát hiện Developer Tools', subtitle: 'Hành vi can thiệp trái phép',
                     reason: 'Hệ thống bảo mật ghi nhận bạn đang mở hoặc cố gắng mở bảng điều khiển nhà phát triển.',
                     fixes: ['Đóng ngay lập tức bảng điều khiển F12 / Inspect.', 'Không cố gắng kiểm tra mã nguồn hệ thống.', 'Tải lại trang để khôi phục trạng thái.'],
-                    action: { label: 'Tôi đã hiểu & Tải lại trang', fn: () => window.location.reload() }
+                    action: { label: 'Tải lại trang', fn: () => window.location.reload() }
                 },
                 ERR_CHEAT_BLUR: {
                     icon: 'ti-eye-off', iconClass: 'orange',
@@ -910,20 +904,20 @@
                     title: 'Phát hiện Công cụ / Antidetect', subtitle: 'Hành vi giả lập bị từ chối',
                     reason: 'Trình duyệt đang được điều khiển bởi một công cụ tự động hóa hoặc trình duyệt Antidetect PC.',
                     fixes: ['Tắt hoàn toàn các công cụ Selenium, Puppeteer, hoặc Antidetect Browser.', 'Chỉ sử dụng trình duyệt Chrome/Safari gốc không tiện ích can thiệp.'],
-                    action: { label: 'Tải lại trang sạch', fn: () => window.location.reload() }
+                    action: { label: 'Tải lại trang', fn: () => window.location.reload() }
                 },
                 ERR_VPN_PROXY: {
                     icon: 'ti-shield-lock', iconClass: 'red',
                     title: 'Phát hiện VPN / Proxy', subtitle: 'Mạng ẩn danh bị từ chối',
                     reason: 'Hệ thống phát hiện rò rỉ WebRTC hoặc nhận diện mạng riêng ảo (VPN), Cloudflare WARP, Proxy dân cư/PC.',
-                    fixes: ['Tắt hoàn toàn phần mềm thay đổi mạng.', 'Đảm bảo WebRTC không bị chặn.', 'Sử dụng mạng 4G/WiFi gốc của nhà mạng VN.'],
+                    fixes: ['Tắt hoàn toàn phần mềm thay đổi mạng.', 'Sử dụng mạng 4G/WiFi gốc của nhà mạng VN.', 'Tải lại trang sau khi đã ngắt kết nối ảo.'],
                     action: { label: 'Tải lại trang', fn: () => window.location.reload() }
                 },
                 ERR_EXTENSION_BLOCK: {
                     icon: 'ti-puzzle-off', iconClass: 'orange',
-                    title: 'Phát hiện Tiện ích can thiệp', subtitle: 'Trình chặn quảng cáo & Script',
-                    reason: 'Trình duyệt đang chạy tiện ích chặn liên kết (AdBlock, uBlock) hoặc các tập lệnh tự động hóa bị ghi đè.',
-                    fixes: ['Tắt trình chặn quảng cáo cho trang web này.', 'Vô hiệu hóa Tampermonkey / Violentmonkey.', 'Sử dụng trình duyệt không cài tiện ích.'],
+                    title: 'Phát hiện Tiện ích can thiệp', subtitle: 'Phát hiện Script chèn ép',
+                    reason: 'Trình duyệt đang chạy các tập lệnh tự động hóa bị ghi đè vào hệ thống lõi.',
+                    fixes: ['Vô hiệu hóa Tampermonkey / Violentmonkey.', 'Tắt các Tool Auto Click.', 'Sử dụng trình duyệt không cài tiện ích.'],
                     action: { label: 'Tải lại trang', fn: () => window.location.reload() }
                 },
                 ERR_INCOGNITO: {
@@ -1028,6 +1022,10 @@
                 },
 
                 toggleOverlay: function(show, text) {
+                    if (module.state.isViolated) {
+                        module.dom.globalOverlay.classList.remove('active');
+                        return;
+                    }
                     if (show) {
                         if (text) module.dom.overlayText.textContent = text;
                         module.dom.globalOverlay.classList.add('active');
@@ -1125,6 +1123,10 @@
                     d.timeDisplay.innerText = timeLeft + 's';
                     d.sessionBar.style.width = '100%';
                     var cleanupInterval = _setInterval(function() {
+                        if (module.state.isViolated) {
+                            clearInterval(cleanupInterval);
+                            return;
+                        }
                         timeLeft--;
                         if (timeLeft > 0) {
                             d.timeDisplay.innerText = timeLeft + 's';
@@ -1470,9 +1472,13 @@
                         s.drawingPts = [];
                         s.drawingTimes = [];
                         
-                        s.dotsReached = new Array(s.totalDots).fill(false);
-                        s.currentTargetDot = 1;
-                        s.hasStartedFromDot1 = false;
+                        if (forceShuffle) {
+                            module.pcCaptcha.generateRandomDots();
+                        } else {
+                            s.dotsReached = new Array(s.totalDots).fill(false);
+                            s.currentTargetDot = 1;
+                            s.hasStartedFromDot1 = false;
+                        }
                         
                         s.isResetting = false;
                         s.resetTimeout = null;
@@ -1488,6 +1494,7 @@
                 startDrawing: function(pos) {
                     var s = module.state;
                     var d = module.dom;
+                    if (s.isViolated) return;
                     s.isDrawing = true;
                     s.hasStartedFromDot1 = true;
                     s.drawingPts = [];
@@ -1737,52 +1744,21 @@
                 },
                 
                 runNetworkCheck: function() {
-                    _fetch('https://ipapi.co/json/?t=' + Date.now(), { cache: 'no-store' })
+                    if (module.state.isViolated) return;
+                    _fetch('https://ipwho.is/?t=' + Date.now(), { cache: 'no-store' })
                         .then(function(res) { return res.json(); })
                         .then(function(data) {
-                            if (data.country !== 'VN' || (data.org && data.org.match(/cloud|host|digitalocean|amazon|ovh|choopa|colocrossing/i))) {
+                            if (data.country_code && data.country_code !== 'VN') {
+                                module.antiCheat.triggerViolation('ERR_VPN_PROXY');
+                            }
+                            if (data.security && (data.security.vpn || data.security.proxy || data.security.tor || data.security.hosting)) {
                                 module.antiCheat.triggerViolation('ERR_VPN_PROXY');
                             }
                         }).catch(function() {});
-                        
-                    var urls = [
-                        'https://cloudflare.com/cdn-cgi/trace',
-                        'https://1.1.1.1/cdn-cgi/trace'
-                    ];
-                    for (var i = 0; i < urls.length; i++) {
-                        _fetch(urls[i] + '?t=' + Date.now(), { mode: 'cors', cache: 'no-store' })
-                            .then(function(res) { return res.text(); })
-                            .then(function(data) {
-                                if (data.indexOf('warp=on') !== -1 || data.indexOf('warp=plus') !== -1) {
-                                    module.antiCheat.triggerViolation('ERR_VPN_PROXY');
-                                }
-                                var match = data.match(/loc=([A-Z]+)/);
-                                if (match && match[1] !== 'VN') {
-                                    module.antiCheat.triggerViolation('ERR_VPN_PROXY');
-                                }
-                            }).catch(function() {});
-                    }
                 },
 
                 checkExtensions: function() {
-                    _fetch('https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js', { mode: 'no-cors', cache: 'no-store' })
-                        .catch(function() {
-                            module.antiCheat.triggerViolation('ERR_EXTENSION_BLOCK');
-                        });
-
-                    var bait = document.createElement('div');
-                    bait.className = 'ad-banner doubleclick adsbox ad-slot';
-                    bait.style.position = 'absolute';
-                    bait.style.top = '-9999px';
-                    bait.style.height = '10px';
-                    document.body.appendChild(bait);
-                    _setTimeout(function() {
-                        if (bait.offsetHeight === 0 || window.getComputedStyle(bait).display === 'none') {
-                            module.antiCheat.triggerViolation('ERR_EXTENSION_BLOCK');
-                        }
-                        if (bait.parentNode) bait.parentNode.removeChild(bait);
-                    }, 500);
-
+                    if (module.state.isViolated) return;
                     var suspiciousVars = ['GM_info', 'TM_ENV', '__TAMPERMONKEY_ENVIROMENT__', 'cdc_adoQpoasnfa76pfcZLmcfl_', '$cdc_asdjflasutopfhvcZLmcfl_'];
                     for (var i = 0; i < suspiciousVars.length; i++) {
                         if (window[suspiciousVars[i]] !== undefined) {
@@ -1792,20 +1768,6 @@
                 },
 
                 initAntiCheat: function() {
-                    if (!isHooked(window.fetch) || !isHooked(window.setInterval)) {
-                        module.antiCheat.triggerViolation('ERR_EXTENSION_BLOCK');
-                        return;
-                    }
-
-                    var rtc = window.RTCPeerConnection || window.mozRTCPeerConnection || window.webkitRTCPeerConnection;
-                    if (!rtc) {
-                        module.antiCheat.triggerViolation('ERR_VPN_PROXY');
-                    }
-
-                    if (navigator.hardwareConcurrency === 0 || navigator.deviceMemory === 0 || navigator.plugins.length === 0 && !module.state.isMobile) {
-                        module.antiCheat.triggerViolation('ERR_CHEAT_AUTOMATION');
-                    }
-
                     module.antiCheat.checkIncognito();
                     
                     module.state.networkCheckInterval = _setInterval(module.antiCheat.runNetworkCheck, 3000);
@@ -1843,18 +1805,15 @@
                         module.antiCheat.triggerViolation('ERR_VPN_PROXY');
                     }
 
-                    _setInterval(function() {
-                        var threshold = 160;
-                        if (window.outerWidth > 0 && (window.outerWidth - window.innerWidth > threshold || window.outerHeight - window.innerHeight > threshold)) {
-                            module.antiCheat.triggerViolation('ERR_CHEAT_DEVTOOLS');
-                        }
-                        var t0 = performance.now();
-                        debugger;
-                        var t1 = performance.now();
-                        if (t1 - t0 > 100) {
-                            module.antiCheat.triggerViolation('ERR_CHEAT_DEVTOOLS');
-                        }
-                    }, 200);
+                    if (!module.state.isMobile) {
+                        _setInterval(function() {
+                            if (module.state.isViolated) return;
+                            var threshold = 160;
+                            if (window.outerWidth > 0 && (window.outerWidth - window.innerWidth > threshold || window.outerHeight - window.innerHeight > threshold)) {
+                                module.antiCheat.triggerViolation('ERR_CHEAT_DEVTOOLS');
+                            }
+                        }, 1000);
+                    }
                 },
 
                 triggerViolation: function(errKey) {
