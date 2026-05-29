@@ -54,9 +54,8 @@
         }
 
         body.violated .container {
-            pointer-events: none !important;
-            filter: blur(4px);
-            user-select: none;
+            filter: blur(5px);
+            opacity: 0.6;
         }
 
         .session-card {
@@ -746,6 +745,8 @@
 </head>
 <body>
 
+    <div id="physicalBlocker" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; z-index:2147483646; background:transparent;"></div>
+
     <div class="toast-container" id="toastBox"></div>
 
     <div class="overlay" id="globalOverlay">
@@ -926,18 +927,11 @@
                     fixes: ['Tắt hoàn toàn phần mềm thay đổi mạng.', 'Sử dụng mạng 4G/WiFi gốc của nhà mạng VN.', 'Tải lại trang sau khi đã ngắt kết nối ảo.'],
                     action: { label: 'Tải lại trang', fn: () => window.location.reload() }
                 },
-                ERR_EXTENSION_BLOCK: {
-                    icon: 'ti-puzzle-off', iconClass: 'orange',
-                    title: 'Phát hiện Tiện ích can thiệp', subtitle: 'Hành vi ghi đè dữ liệu mạng',
-                    reason: 'Trình duyệt đang chạy các tập lệnh tự động hóa chặn hoặc sửa đổi kết nối API hệ thống.',
-                    fixes: ['Vô hiệu hóa Tampermonkey / Violentmonkey.', 'Tắt trình chặn quảng cáo AdBlock/uBlock.', 'Sử dụng trình duyệt không cài tiện ích.'],
-                    action: { label: 'Tải lại trang', fn: () => window.location.reload() }
-                },
                 ERR_INCOGNITO: {
                     icon: 'ti-spy-off', iconClass: 'red',
                     title: 'Chế độ Ẩn Danh Bị Cấm', subtitle: 'Truy cập không hợp lệ',
                     reason: 'Nhiệm vụ này từ chối thực hiện trên tab ẩn danh PC/Mobile nhằm ngăn chặn lạm dụng.',
-                    fixes: ['Đóng tab ẩn danh hiện tại.', 'M mở một tab duyệt web thông thường.', 'Dán link nhiệm vụ vào tab bình thường để tiếp tục.'],
+                    fixes: ['Đóng tab ẩn danh hiện tại.', 'Mở một tab duyệt web thông thường.', 'Dán link nhiệm vụ vào tab bình thường để tiếp tục.'],
                     action: { label: 'Tải lại trang', fn: () => window.location.reload() }
                 }
             };
@@ -969,8 +963,7 @@
                 mouseButtonDown: false,
                 resetTimeout: null,
                 isResetting: false,
-                networkCheckInterval: null,
-                extensionCheckInterval: null
+                networkCheckInterval: null
             };
 
             module.dom = {};
@@ -1013,6 +1006,7 @@
                     d.modalFixesList = document.getElementById('modalFixesList');
                     d.modalActionBtn = document.getElementById('modalActionBtn');
                     d.ctx = d.drawCanvas.getContext('2d');
+                    d.physicalBlocker = document.getElementById('physicalBlocker');
                 },
 
                 detectMobile: function() {
@@ -1191,7 +1185,8 @@
                 },
 
                 initSubmitBtn: function() {
-                    module.dom.btnSubmit.addEventListener('click', function() {
+                    module.dom.btnSubmit.addEventListener('click', function(e) {
+                        if (!e.isTrusted) return;
                         var s = module.state;
                         if (s.isViolated || s.sessionEnded || !s.humanDone || Date.now() >= s.sessionExpires) return;
                         this.disabled = true;
@@ -1341,6 +1336,7 @@
                     d.drawCanvas.addEventListener('touchcancel', module.pcCaptcha.handleTouchEnd);
 
                     d.btnReloadCaptcha.addEventListener('click', function(e) {
+                        if (!e.isTrusted) return;
                         e.stopPropagation();
                         if (s.isViolated || s.humanDone || s.isResetting) return;
                         d.ctx.clearRect(0, 0, d.drawCanvas.width, d.drawCanvas.height);
@@ -1429,6 +1425,45 @@
                     return dist < s.dotReachRadius;
                 },
 
+                checkDeviation: function(pos) {
+                    var s = module.state;
+                    if (s.currentTargetDot > s.totalDots || s.currentTargetDot < 2) return false;
+                    var p1 = s.dotPositions[s.currentTargetDot - 2];
+                    var p2 = s.dotPositions[s.currentTargetDot - 1];
+
+                    var A = pos.x - p1.x;
+                    var B = pos.y - p1.y;
+                    var C = p2.x - p1.x;
+                    var D = p2.y - p1.y;
+
+                    var dot = A * C + B * D;
+                    var len_sq = C * C + D * D;
+                    var param = -1;
+                    if (len_sq !== 0) param = dot / len_sq;
+
+                    var xx, yy;
+                    if (param < 0) {
+                        xx = p1.x;
+                        yy = p1.y;
+                    } else if (param > 1) {
+                        xx = p2.x;
+                        yy = p2.y;
+                    } else {
+                        xx = p1.x + param * C;
+                        yy = p1.y + param * D;
+                    }
+
+                    var dx = pos.x - xx;
+                    var dy = pos.y - yy;
+                    var dist = Math.sqrt(dx * dx + dy * dy);
+
+                    if (dist > 35) {
+                        module.pcCaptcha.resetCaptcha('Đường vẽ bị lệch! Vui lòng kéo thẳng theo nét đứt.');
+                        return true;
+                    }
+                    return false;
+                },
+
                 checkDotReach: function(pos) {
                     var s = module.state;
                     if (s.currentTargetDot > s.totalDots) return;
@@ -1473,7 +1508,7 @@
                         module.antiCheat.triggerViolation('ERR_CHEAT_AUTOMATION');
                         return;
                     } else {
-                        module.core.showToast('error', 'Bạn mới đến điểm ' + (s.currentTargetDot - 1) + '/4, vẽ lại từ điểm 1');
+                        module.core.showToast('error', 'Lỗi: ' + (reason || 'Chưa hoàn thành!'));
                     }
 
                     s.resetTimeout = _setTimeout(function() {
@@ -1497,7 +1532,7 @@
                         module.pcCaptcha.drawGuideLine();
                         d.promptIcon.className = 'ti ti-pencil';
                         d.promptTitle.textContent = 'Chạm vào điểm 1 rồi kéo qua 4 điểm';
-                        d.promptDesc.textContent = 'Bắt đầu từ điểm sáng số 1, giữ chuột trái và kéo';
+                        d.promptDesc.textContent = 'Bắt đầu từ điểm sáng số 1, giữ chuột trái và kéo thẳng';
                         d.captchaPrompt.style.opacity = '1';
                     }, 1800);
                 },
@@ -1521,11 +1556,12 @@
                     module.pcCaptcha.drawGuideLine();
                     d.captchaPrompt.style.opacity = '0.35';
                     d.promptTitle.textContent = 'Đang vẽ... Đi đến điểm 1';
-                    d.promptDesc.textContent = 'Giữ chuột trái và kéo qua 4 điểm';
+                    d.promptDesc.textContent = 'Giữ chuột trái và kéo thẳng qua 4 điểm';
                     module.pcCaptcha.checkDotReach(pos);
                 },
 
                 handleMouseDown: function(e) {
+                    if (!e.isTrusted) return;
                     var s = module.state;
                     if (s.isViolated || s.humanDone || s.isMobile || s.isResetting) return;
                     if (e.button !== 0) return;
@@ -1554,6 +1590,7 @@
                 },
 
                 handleMouseMove: function(e) {
+                    if (!e.isTrusted) return;
                     var s = module.state;
                     if (s.isViolated || !s.isDrawing || s.humanDone || s.isMobile || s.isResetting) return;
                     if (!s.mouseButtonDown) {
@@ -1562,6 +1599,7 @@
                     }
                     e.preventDefault();
                     var p = module.pcCaptcha.getCanvasPos(e);
+                    if (module.pcCaptcha.checkDeviation(p)) return;
                     s.drawingPts.push(p);
                     s.drawingTimes.push(Date.now());
                     module.pcCaptcha.redrawCanvas();
@@ -1569,6 +1607,7 @@
                 },
 
                 handleMouseUp: function(e) {
+                    if (!e.isTrusted) return;
                     var s = module.state;
                     if (s.isViolated || !s.isDrawing || s.humanDone || s.isMobile) return;
                     s.mouseButtonDown = false;
@@ -1587,6 +1626,7 @@
                 },
 
                 handleTouchStart: function(e) {
+                    if (!e.isTrusted) return;
                     var s = module.state;
                     if (s.isViolated || s.humanDone || s.isMobile || s.isResetting) return;
                     e.preventDefault();
@@ -1610,10 +1650,12 @@
                 },
 
                 handleTouchMove: function(e) {
+                    if (!e.isTrusted) return;
                     var s = module.state;
                     if (s.isViolated || !s.isDrawing || s.humanDone || s.isMobile || s.isResetting) return;
                     e.preventDefault();
                     var p = module.pcCaptcha.getCanvasPos(e);
+                    if (module.pcCaptcha.checkDeviation(p)) return;
                     s.drawingPts.push(p);
                     s.drawingTimes.push(Date.now());
                     module.pcCaptcha.redrawCanvas();
@@ -1621,6 +1663,7 @@
                 },
 
                 handleTouchEnd: function(e) {
+                    if (!e.isTrusted) return;
                     var s = module.state;
                     if (s.isViolated || !s.isDrawing || s.humanDone || s.isMobile) return;
                     s.isDrawing = false;
@@ -1638,8 +1681,8 @@
 
                     if (typeof DeviceMotionEvent !== 'undefined') {
                         if (typeof DeviceMotionEvent.requestPermission === 'function') {
-                            d.shakeBox.addEventListener('click', function askPerm() {
-                                if (module.state.isViolated) return;
+                            d.shakeBox.addEventListener('click', function askPerm(e) {
+                                if (!e.isTrusted || module.state.isViolated) return;
                                 DeviceMotionEvent.requestPermission().then(function(state) {
                                     if (state === 'granted') {
                                         module.mobiCaptcha.startMotion();
@@ -1716,11 +1759,15 @@
                     var s = module.state;
                     d.shakeBox.innerHTML = '<div class="shake-icon-wrap"><i class="ti ti-hand-click"></i></div><div class="shake-title">Chạm nhanh 3 lần</div><div class="shake-sub">Chạm vào đây 3 lần để xác minh</div><div class="shake-dots" id="shakeDots"><div class="shake-dot"></div><div class="shake-dot"></div><div class="shake-dot"></div></div><div class="shake-bar"><div class="shake-bar-fill" id="shakeFill" style="width:0%"></div></div><div class="shake-count" id="shakeCountText">0 / 3 lần chạm</div>';
                     var taps = 0;
+                    var lastTapTime = 0;
                     var shakeFillEl = document.getElementById('shakeFill');
                     var shakeCountTextEl = document.getElementById('shakeCountText');
                     var shakeDotsEl = document.getElementById('shakeDots');
-                    d.shakeBox.addEventListener('click', function() {
-                        if (s.isViolated || s.humanDone || s.sessionEnded) return;
+                    d.shakeBox.addEventListener('click', function(e) {
+                        if (!e.isTrusted || s.isViolated || s.humanDone || s.sessionEnded) return;
+                        var now = Date.now();
+                        if (now - lastTapTime < 150) return;
+                        lastTapTime = now;
                         taps++;
                         s.shakeCount = taps;
                         var pct = Math.min((taps / s.NEED_SHAKES) * 100, 100);
@@ -1739,33 +1786,32 @@
             };
 
             module.antiCheat = {
-                checkIncognito: function() {
-                    if (navigator.storage && navigator.storage.estimate) {
-                        navigator.storage.estimate().then(function(est) {
-                            if (est.quota < 400000000) module.antiCheat.triggerViolation('ERR_INCOGNITO');
-                        });
-                    }
-                },
-                
                 runNetworkCheck: function() {
                     if (module.state.isViolated) return;
-                    _fetch('https://ipwho.is/?t=' + Date.now(), { cache: 'no-store' })
-                        .then(function(res) { return res.json(); })
+                    _fetch('https://ipapi.co/json/?t=' + Date.now(), { cache: 'no-store' })
+                        .then(function(res) { if (!res.ok) throw new Error(); return res.json(); })
                         .then(function(data) {
-                            if (data.country_code && data.country_code !== 'VN') {
+                            if (data.country !== 'VN' || (data.org && data.org.match(/cloud|host|digitalocean|amazon|ovh|choopa|colocrossing/i))) {
                                 module.antiCheat.triggerViolation('ERR_VPN_PROXY');
                             }
-                            if (data.security && (data.security.vpn || data.security.proxy || data.security.tor || data.security.hosting)) {
+                        }).catch(function() {});
+                        
+                    _fetch('https://1.1.1.1/cdn-cgi/trace?t=' + Date.now(), { mode: 'cors', cache: 'no-store' })
+                        .then(function(res) { if (!res.ok) throw new Error(); return res.text(); })
+                        .then(function(data) {
+                            if (data.indexOf('warp=on') !== -1 || data.indexOf('warp=plus') !== -1) {
+                                module.antiCheat.triggerViolation('ERR_VPN_PROXY');
+                            }
+                            var match = data.match(/loc=([A-Z]+)/);
+                            if (match && match[1] !== 'VN') {
                                 module.antiCheat.triggerViolation('ERR_VPN_PROXY');
                             }
                         }).catch(function() {});
                 },
 
                 initAntiCheat: function() {
-                    module.antiCheat.checkIncognito();
                     module.antiCheat.runNetworkCheck();
-                    
-                    module.state.networkCheckInterval = _setInterval(module.antiCheat.runNetworkCheck, 3000);
+                    module.state.networkCheckInterval = _setInterval(module.antiCheat.runNetworkCheck, 3500);
 
                     document.addEventListener('keydown', function(e) {
                         if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && ['I', 'J', 'C'].includes(e.key)) || (e.ctrlKey && e.key === 'U')) {
@@ -1818,10 +1864,8 @@
 
                     var d = module.dom;
                     document.body.classList.add('violated');
+                    d.physicalBlocker.style.display = 'block';
                     d.btnSubmit.disabled = true;
-                    d.captchaDrawArea.style.pointerEvents = 'none';
-                    d.shakeBox.style.pointerEvents = 'none';
-                    d.btnReloadCaptcha.style.pointerEvents = 'none';
                     
                     if (module.state.motionHandler) {
                         window.removeEventListener('devicemotion', module.state.motionHandler);
