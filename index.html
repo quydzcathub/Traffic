@@ -1,0 +1,1931 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Xác minh — FishX Traffic</title>
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+    <style>
+        :root {
+            --primary: #10b981;
+            --primary-light: #d1fae5;
+            --primary-dark: #059669;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --bg-body: #f3f4f6;
+            --bg-surface: #ffffff;
+            --text-main: #1f2937;
+            --text-muted: #6b7280;
+            --border-color: #e5e7eb;
+            --radius: 16px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+        }
+
+        body {
+            background-color: var(--bg-body);
+            font-family: 'Be Vietnam Pro', sans-serif;
+            font-size: 14px;
+            color: var(--text-main);
+            min-height: 100vh;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
+            touch-action: manipulation;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 24px 16px 60px;
+        }
+
+        .session-card {
+            background: var(--bg-surface);
+            border-radius: var(--radius);
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+            margin-bottom: 20px;
+            border: 1px solid var(--border-color);
+            position: relative;
+        }
+        .session-icon {
+            width: 52px;
+            height: 52px;
+            border-radius: 14px;
+            background: var(--primary-light);
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: all 0.3s ease;
+        }
+        .session-icon i {
+            font-size: 32px;
+        }
+        .session-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .session-label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: color 0.3s ease;
+        }
+        .session-time {
+            font-size: 22px;
+            font-weight: 800;
+            color: var(--text-main);
+            font-variant-numeric: tabular-nums;
+            line-height: 1.2;
+            margin-bottom: 6px;
+            transition: color 0.3s ease;
+        }
+        .progress-wrap {
+            width: 100%;
+            height: 4px;
+            background: #e5e7eb;
+            border-radius: 99px;
+            overflow: hidden;
+        }
+        .progress-bar {
+            height: 100%;
+            width: 100%;
+            background: var(--primary);
+            border-radius: 99px;
+            transition: width 1s linear, background-color 0.5s ease;
+        }
+        .session-status {
+            font-size: 11px;
+            font-weight: 700;
+            padding: 4px 12px;
+            border-radius: 20px;
+            background: var(--primary-light);
+            color: var(--primary-dark);
+            transition: all 0.3s ease;
+        }
+        .session-status.urgent {
+            background: #fee2e2 !important;
+            color: #ef4444 !important;
+        }
+
+        .main-card {
+            background: var(--bg-surface);
+            border-radius: var(--radius);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+        }
+        .main-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border-color);
+            background: #f9fafb;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 700;
+            color: var(--text-main);
+        }
+        .main-header i {
+            color: var(--primary);
+            font-size: 18px;
+        }
+        .main-body {
+            padding: 24px 20px;
+        }
+
+        .alert-box {
+            background: #fffbeb;
+            border-left: 4px solid #fbbf24;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 28px;
+            transition: all 0.3s ease;
+        }
+        .alert-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #b45309;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 10px;
+            transition: color 0.3s ease;
+        }
+        .alert-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .alert-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            font-size: 13px;
+            color: #78350f;
+            line-height: 1.5;
+        }
+        .alert-item i {
+            font-size: 16px;
+            margin-top: 2px;
+            flex-shrink: 0;
+        }
+
+        .timeline {
+            display: flex;
+            flex-direction: column;
+        }
+        .step {
+            display: flex;
+            gap: 16px;
+            position: relative;
+            padding-bottom: 28px;
+        }
+        .step:last-child {
+            padding-bottom: 0;
+        }
+        .step-indicator {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex-shrink: 0;
+            width: 32px;
+        }
+        .step-circle {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 14px;
+            z-index: 2;
+            box-shadow: 0 0 0 4px var(--primary-light);
+            transition: all 0.3s;
+        }
+        .step-circle.done {
+            background: #059669;
+            box-shadow: 0 0 0 4px #d1fae5;
+        }
+        .step-line {
+            width: 2px;
+            background: var(--border-color);
+            flex: 1;
+            margin-top: 4px;
+            border-radius: 2px;
+        }
+        .step:last-child .step-line {
+            display: none;
+        }
+        .step-content {
+            flex: 1;
+            padding-top: 4px;
+        }
+        .step-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text-main);
+            margin-bottom: 6px;
+        }
+        .step-desc {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .search-box {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #fff;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 12px 16px;
+            margin-top: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+        }
+        .search-box i.ti-brand-google {
+            color: #4285f4;
+            font-size: 18px;
+        }
+        .search-box i.ti-microphone {
+            color: #9ca3af;
+            font-size: 18px;
+        }
+        .search-box span {
+            flex: 1;
+            font-size: 13px;
+            color: var(--text-main);
+            font-weight: 500;
+        }
+
+        .captcha-wrapper {
+            margin-top: 10px;
+            position: relative;
+        }
+
+        .captcha-draw-area {
+            position: relative;
+            background: #f9fafb;
+            border-radius: 12px;
+            border: 2px dashed var(--border-color);
+            overflow: hidden;
+            transition: all 0.3s ease;
+            min-height: 180px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: crosshair;
+        }
+        .captcha-draw-area.active {
+            border-color: var(--primary);
+            border-style: solid;
+            box-shadow: 0 0 16px rgba(16, 185, 129, 0.15);
+        }
+        .captcha-draw-area.success {
+            border-color: #059669;
+            border-style: solid;
+            box-shadow: 0 0 16px rgba(5, 150, 105, 0.15);
+            background: #f0fdf4;
+            cursor: default;
+        }
+        .captcha-draw-area.failed {
+            border-color: var(--danger);
+            animation: shake 0.5s ease-in-out;
+            box-shadow: 0 0 16px rgba(239, 68, 68, 0.15);
+        }
+        #drawCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+            touch-action: none;
+            cursor: crosshair;
+        }
+        .captcha-prompt {
+            z-index: 1;
+            text-align: center;
+            pointer-events: none;
+            padding: 20px;
+            transition: opacity 0.3s;
+        }
+        .captcha-prompt i {
+            font-size: 36px;
+            color: #9ca3af;
+            display: block;
+            margin-bottom: 6px;
+        }
+        .captcha-prompt .prompt-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #1f2937;
+            margin-bottom: 2px;
+        }
+        .captcha-prompt .prompt-desc {
+            font-size: 12px;
+            color: #6b7280;
+        }
+
+        .btn-reload-captcha {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            z-index: 10;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.85);
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            backdrop-filter: blur(4px);
+        }
+        .btn-reload-captcha:hover {
+            color: var(--primary);
+            border-color: var(--primary);
+            background: #ffffff;
+        }
+
+        .dot-markers {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 3;
+            pointer-events: none;
+        }
+        .dot-marker {
+            position: absolute;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: #fff;
+            border: 3px solid #d1d5db;
+            color: #6b7280;
+            font-weight: 800;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transform: translate(-50%, -50%);
+            transition: all 0.4s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        .dot-marker.reached {
+            background: #10b981;
+            border-color: #059669;
+            color: #fff;
+            box-shadow: 0 0 14px rgba(16, 185, 129, 0.6);
+            transform: translate(-50%, -50%) scale(1.3);
+        }
+        .dot-marker.next-target {
+            border-color: #10b981;
+            animation: pulse-dot 1s ease-in-out infinite;
+            box-shadow: 0 0 18px rgba(16, 185, 129, 0.5);
+        }
+
+        .draw-guide-svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .shake-box {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 24px 20px;
+            min-height: 160px;
+            background: #f9fafb;
+            border-radius: 12px;
+            border: 2px dashed var(--border-color);
+            transition: all 0.15s ease;
+        }
+        .shake-box.shaking {
+            border-color: #059669;
+            background: #f0fdf4;
+            transform: scale(0.96);
+        }
+        .shake-box .shake-icon-wrap {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: #e5e7eb;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: float 2s ease-in-out infinite;
+            transition: all 0.3s;
+        }
+        .shake-box .shake-icon-wrap i {
+            font-size: 32px;
+            color: #6b7280;
+            transition: color 0.3s;
+        }
+        .shake-box .shake-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: #1f2937;
+        }
+        .shake-box .shake-sub {
+            font-size: 12px;
+            color: #6b7280;
+        }
+        .shake-dots {
+            display: flex;
+            gap: 10px;
+        }
+        .shake-dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #e5e7eb;
+            transition: all 0.3s;
+        }
+        .shake-dot.filled {
+            background: #10b981;
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+        }
+        .shake-bar {
+            width: 75%;
+            height: 6px;
+            background: #e5e7eb;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .shake-bar-fill {
+            height: 100%;
+            background: var(--primary);
+            border-radius: 4px;
+            width: 0%;
+            transition: width 0.3s;
+        }
+        .shake-count {
+            font-size: 13px;
+            font-weight: 700;
+            color: #1f2937;
+        }
+
+        .btn-submit {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            height: 48px;
+            background: var(--primary);
+            color: #fff;
+            font-size: 14px;
+            font-weight: 700;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            margin-top: 12px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+            font-family: 'Be Vietnam Pro', sans-serif;
+        }
+        .btn-submit:hover:not(:disabled) {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(16, 185, 129, 0.35);
+        }
+        .btn-submit:disabled {
+            background: var(--text-muted);
+            box-shadow: none;
+            cursor: not-allowed;
+            opacity: 0.8;
+            transform: none;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(8px);
+            z-index: 20000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+        .modal-overlay.active {
+            display: flex;
+        }
+        .modal-card {
+            background: var(--bg-surface);
+            border-radius: var(--radius);
+            max-width: 440px;
+            width: 100%;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            overflow: hidden;
+            animation: modalScale 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+            pointer-events: auto;
+        }
+        @keyframes modalScale {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .modal-body {
+            padding: 24px;
+            text-align: center;
+        }
+        .modal-icon-wrap {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px;
+        }
+        .modal-icon-wrap.orange {
+            background: #fff7ed;
+            color: #f97316;
+        }
+        .modal-icon-wrap.red {
+            background: #fef2f2;
+            color: #ef4444;
+        }
+        .modal-icon-wrap.gray {
+            background: #f8fafc;
+            color: #64748b;
+        }
+        .modal-icon-wrap i {
+            font-size: 36px;
+        }
+        .modal-title {
+            font-size: 18px;
+            font-weight: 800;
+            color: var(--text-main);
+            margin-bottom: 4px;
+        }
+        .modal-subtitle {
+            font-size: 13px;
+            color: var(--text-muted);
+            font-weight: 500;
+            margin-bottom: 16px;
+        }
+        .modal-reason {
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 13px;
+            color: #475569;
+            text-align: left;
+            margin-bottom: 16px;
+            border-left: 3px solid #cbd5e1;
+        }
+        .modal-fixes {
+            text-align: left;
+            margin-bottom: 24px;
+        }
+        .modal-fixes-title {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-main);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+        .modal-fix-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            font-size: 13px;
+            color: #334155;
+            margin-bottom: 6px;
+        }
+        .modal-fix-item i {
+            color: var(--primary);
+            font-size: 16px;
+            margin-top: 2px;
+            flex-shrink: 0;
+        }
+        .modal-btn {
+            width: 100%;
+            height: 44px;
+            background: var(--text-main);
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .modal-btn:hover {
+            opacity: 0.9;
+        }
+
+        .toast-container {
+            position: fixed;
+            top: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 9999;
+            width: calc(100% - 32px);
+            max-width: 360px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            pointer-events: none;
+        }
+        .toast {
+            pointer-events: all;
+            background: var(--bg-surface);
+            border-radius: 12px;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+            animation: slideDown 0.4s ease forwards;
+            border: 1px solid var(--border-color);
+        }
+        .toast i:first-child {
+            font-size: 20px;
+        }
+        .toast.success i:first-child {
+            color: var(--primary);
+        }
+        .toast.error i:first-child {
+            color: var(--danger);
+        }
+
+        .overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(4px);
+            z-index: 10000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .overlay.active {
+            display: flex;
+        }
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid var(--primary-light);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .overlay-text {
+            color: var(--text-main);
+            font-size: 15px;
+            font-weight: 700;
+        }
+
+        footer {
+            text-align: center;
+            padding: 20px 0;
+            font-size: 12px;
+            color: var(--text-muted);
+            opacity: 0.6;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="toast-container" id="toastBox"></div>
+
+    <div class="overlay" id="globalOverlay">
+        <div class="spinner"></div>
+        <div class="overlay-text" id="overlayText">Đang xử lý & Chuyển hướng...</div>
+    </div>
+
+    <div class="modal-overlay" id="errModalOverlay">
+        <div class="modal-card">
+            <div class="modal-body">
+                <div class="modal-icon-wrap" id="modalIconWrap">
+                    <i class="ti" id="modalIcon"></i>
+                </div>
+                <div class="modal-title" id="modalTitle"></div>
+                <div class="modal-subtitle" id="modalSubtitle"></div>
+                <div class="modal-reason" id="modalReason"></div>
+                <div class="modal-fixes">
+                    <div class="modal-fixes-title">Cách khắc phục</div>
+                    <div id="modalFixesList"></div>
+                </div>
+                <button type="button" class="modal-btn" id="modalActionBtn"></button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+
+        <div class="session-card">
+            <div class="session-icon" id="iconTimer">
+                <i class="ti ti-clock"></i>
+            </div>
+            <div class="session-info">
+                <div class="session-label" id="sessionLabel">Thời gian phiên</div>
+                <div class="session-time" id="timeDisplay">09:59</div>
+                <div class="progress-wrap">
+                    <div class="progress-bar" id="sessionBar"></div>
+                </div>
+            </div>
+            <div class="session-status" id="statusBadge">Hoạt động</div>
+        </div>
+
+        <div class="main-card">
+            <div class="main-header">
+                <i class="ti ti-shield-check-filled"></i>
+                <span>FishX Security</span>
+            </div>
+            <div class="main-body">
+
+                <div class="alert-box" id="mainAlertBox">
+                    <div class="alert-title"><i class="ti ti-alert-triangle-filled"></i> Lưu ý quan trọng</div>
+                    <div class="alert-list">
+                        <div class="alert-item">
+                            <i class="ti ti-circle-x-filled" style="color: var(--danger);"></i>
+                            <span><strong>Cấm VPN/Proxy</strong> — PC và Mobile đều bị kiểm tra rò rỉ WebRTC và máy chủ ẩn.</span>
+                        </div>
+                        <div class="alert-item">
+                            <i class="ti ti-circle-x-filled" style="color: var(--danger);"></i>
+                            <span><strong>Cấm Antidetect</strong> — Các trình duyệt giả lập, tab ẩn danh bị cấm 100%.</span>
+                        </div>
+                        <div class="alert-item">
+                            <i class="ti ti-circle-check-filled" style="color: var(--primary);"></i>
+                            <span>Chỉ sử dụng trình duyệt <strong>Chrome</strong> hoặc <strong>Safari</strong> nguyên bản.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="timeline">
+
+                    <div class="step">
+                        <div class="step-indicator">
+                            <div class="step-circle">1</div>
+                            <div class="step-line"></div>
+                        </div>
+                        <div class="step-content">
+                            <div class="step-title">Tìm kiếm kết quả</div>
+                            <div class="step-desc"><strong>Chrome</strong> hoặc <strong>Safari</strong></div>
+                            <div class="search-box">
+                                <i class="ti ti-brand-google"></i>
+                                <span>Tìm kiếm theo hướng dẫn nhiệm vụ</span>
+                                <i class="ti ti-microphone"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="step">
+                        <div class="step-indicator">
+                            <div class="step-circle" id="stepCircle2">2</div>
+                            <div class="step-line"></div>
+                        </div>
+                        <div class="step-content">
+                            <div class="step-title">Xác minh Captcha</div>
+                            <div class="step-desc" id="captchaStepDesc">Hoàn thành xác minh bên dưới</div>
+                            <div class="captcha-wrapper">
+                                <div class="captcha-draw-area" id="captchaDrawArea">
+                                    <button type="button" class="btn-reload-captcha" id="btnReloadCaptcha" title="Đổi vị trí">
+                                        <i class="ti ti-refresh"></i>
+                                    </button>
+                                    <svg class="draw-guide-svg" id="drawGuideSvg"></svg>
+                                    <div class="dot-markers" id="dotMarkers"></div>
+                                    <div class="captcha-prompt" id="captchaPrompt">
+                                        <i class="ti ti-pencil" id="promptIcon"></i>
+                                        <div class="prompt-title" id="promptTitle">Chạm vào điểm 1 rồi kéo qua 4 điểm</div>
+                                        <div class="prompt-desc" id="promptDesc">Bắt đầu từ điểm sáng số 1, giữ chuột trái và kéo</div>
+                                    </div>
+                                    <canvas id="drawCanvas"></canvas>
+                                </div>
+                                <div class="shake-box" id="shakeBox">
+                                    <div class="shake-icon-wrap"><i class="ti ti-wave-saw-tool"></i></div>
+                                    <div class="shake-title">Lắc điện thoại của bạn</div>
+                                    <div class="shake-sub">Lắc mạnh 3 lần để xác minh</div>
+                                    <div class="shake-dots" id="shakeDots">
+                                        <div class="shake-dot"></div>
+                                        <div class="shake-dot"></div>
+                                        <div class="shake-dot"></div>
+                                    </div>
+                                    <div class="shake-bar">
+                                        <div class="shake-bar-fill" id="shakeFill"></div>
+                                    </div>
+                                    <div class="shake-count" id="shakeCountText">0 / 3 lần lắc</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="step">
+                        <div class="step-indicator">
+                            <div class="step-circle" id="stepCircle3">3</div>
+                        </div>
+                        <div class="step-content">
+                            <div class="step-title">Hoàn tất</div>
+                            <button id="btnSubmit" class="btn-submit" disabled>
+                                <i class="ti ti-check" style="font-size: 18px;"></i> Chuyển hướng
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <footer>© 2025 FishX Security</footer>
+    </div>
+
+    <script>
+        var fishX = (function() {
+            var module = {};
+
+            var _fetch = window.fetch.bind(window);
+            var _setInterval = window.setInterval.bind(window);
+            var _setTimeout = window.setTimeout.bind(window);
+            
+            var isHooked = function(fn) {
+                try {
+                    return fn.toString().indexOf('[native code]') === -1;
+                } catch(e) { return true; }
+            };
+
+            module.errorCatalog = {
+                ERR_CHEAT_DEVTOOLS: {
+                    icon: 'ti-code-off', iconClass: 'red',
+                    title: 'Phát hiện Developer Tools', subtitle: 'Hành vi can thiệp trái phép',
+                    reason: 'Hệ thống bảo mật ghi nhận bạn đang mở hoặc cố gắng mở bảng điều khiển nhà phát triển.',
+                    fixes: ['Đóng ngay lập tức bảng điều khiển F12 / Inspect.', 'Không cố gắng kiểm tra mã nguồn hệ thống.', 'Tải lại trang để khôi phục trạng thái.'],
+                    action: { label: 'Tôi đã hiểu & Tải lại trang', fn: () => window.location.reload() }
+                },
+                ERR_CHEAT_BLUR: {
+                    icon: 'ti-eye-off', iconClass: 'orange',
+                    title: 'Rời khỏi tab làm việc', subtitle: 'Yêu cầu duy trì tiêu điểm',
+                    reason: 'Hệ thống giao diện phát hiện bạn đã chuyển sang tab khác hoặc thu nhỏ trình duyệt.',
+                    fixes: ['Luôn giữ màn hình xác thực hoạt động liên tục.', 'Không chạy ngầm hoặc chuyển đổi ứng dụng.', 'Thực hiện lại captcha.'],
+                    action: { label: 'Tải lại trang', fn: () => window.location.reload() }
+                },
+                ERR_CHEAT_AUTOMATION: {
+                    icon: 'ti-robot', iconClass: 'red',
+                    title: 'Phát hiện Công cụ / Antidetect', subtitle: 'Hành vi giả lập bị từ chối',
+                    reason: 'Trình duyệt đang được điều khiển bởi một công cụ tự động hóa hoặc trình duyệt Antidetect PC.',
+                    fixes: ['Tắt hoàn toàn các công cụ Selenium, Puppeteer, hoặc Antidetect Browser.', 'Chỉ sử dụng trình duyệt Chrome/Safari gốc không tiện ích can thiệp.'],
+                    action: { label: 'Tải lại trang sạch', fn: () => window.location.reload() }
+                },
+                ERR_VPN_PROXY: {
+                    icon: 'ti-shield-lock', iconClass: 'red',
+                    title: 'Phát hiện VPN / Proxy', subtitle: 'Mạng ẩn danh bị từ chối',
+                    reason: 'Hệ thống phát hiện rò rỉ WebRTC hoặc nhận diện mạng riêng ảo (VPN), Cloudflare WARP, Proxy dân cư/PC.',
+                    fixes: ['Tắt hoàn toàn phần mềm thay đổi mạng.', 'Đảm bảo WebRTC không bị chặn.', 'Sử dụng mạng 4G/WiFi gốc của nhà mạng VN.'],
+                    action: { label: 'Tải lại trang', fn: () => window.location.reload() }
+                },
+                ERR_EXTENSION_BLOCK: {
+                    icon: 'ti-puzzle-off', iconClass: 'orange',
+                    title: 'Phát hiện Tiện ích can thiệp', subtitle: 'Trình chặn quảng cáo & Script',
+                    reason: 'Trình duyệt đang chạy tiện ích chặn liên kết (AdBlock, uBlock) hoặc các tập lệnh tự động hóa bị ghi đè.',
+                    fixes: ['Tắt trình chặn quảng cáo cho trang web này.', 'Vô hiệu hóa Tampermonkey / Violentmonkey.', 'Sử dụng trình duyệt không cài tiện ích.'],
+                    action: { label: 'Tải lại trang', fn: () => window.location.reload() }
+                },
+                ERR_INCOGNITO: {
+                    icon: 'ti-spy-off', iconClass: 'red',
+                    title: 'Chế độ Ẩn Danh Bị Cấm', subtitle: 'Truy cập không hợp lệ',
+                    reason: 'Nhiệm vụ này từ chối thực hiện trên tab ẩn danh PC/Mobile nhằm ngăn chặn lạm dụng.',
+                    fixes: ['Đóng tab ẩn danh hiện tại.', 'Mở một tab duyệt web thông thường.', 'Dán link nhiệm vụ vào tab bình thường để tiếp tục.'],
+                    action: { label: 'Đã hiểu', fn: () => window.location.reload() }
+                }
+            };
+
+            module.state = {
+                humanDone: false,
+                sessionEnded: false,
+                isMobile: false,
+                isViolated: false,
+                TOTAL_MS: 10 * 60 * 1000,
+                sessionExpires: Date.now() + (10 * 60 * 1000),
+                timerId: null,
+                shakeCount: 0,
+                NEED_SHAKES: 3,
+                lastShakeMs: 0,
+                SHAKE_COOLDOWN: 350,
+                SHAKE_FORCE: 14,
+                motionHandler: null,
+                drawingPts: [],
+                drawingTimes: [],
+                isDrawing: false,
+                hasStartedFromDot1: false,
+                dotPositions: [],
+                dotsReached: [],
+                currentTargetDot: 1,
+                totalDots: 4,
+                failedAttempts: 0,
+                dotReachRadius: 32,
+                mouseButtonDown: false,
+                resetTimeout: null,
+                isResetting: false,
+                networkCheckInterval: null,
+                extensionCheckInterval: null
+            };
+
+            module.dom = {};
+
+            module.core = {
+                initDom: function() {
+                    var d = module.dom;
+                    d.timeDisplay = document.getElementById('timeDisplay');
+                    d.sessionLabel = document.getElementById('sessionLabel');
+                    d.sessionBar = document.getElementById('sessionBar');
+                    d.statusBadge = document.getElementById('statusBadge');
+                    d.iconTimer = document.getElementById('iconTimer');
+                    d.btnSubmit = document.getElementById('btnSubmit');
+                    d.captchaDrawArea = document.getElementById('captchaDrawArea');
+                    d.btnReloadCaptcha = document.getElementById('btnReloadCaptcha');
+                    d.drawCanvas = document.getElementById('drawCanvas');
+                    d.dotMarkers = document.getElementById('dotMarkers');
+                    d.drawGuideSvg = document.getElementById('drawGuideSvg');
+                    d.captchaPrompt = document.getElementById('captchaPrompt');
+                    d.promptIcon = document.getElementById('promptIcon');
+                    d.promptTitle = document.getElementById('promptTitle');
+                    d.promptDesc = document.getElementById('promptDesc');
+                    d.shakeBox = document.getElementById('shakeBox');
+                    d.shakeFill = document.getElementById('shakeFill');
+                    d.shakeCountText = document.getElementById('shakeCountText');
+                    d.shakeDots = document.getElementById('shakeDots');
+                    d.stepCircle2 = document.getElementById('stepCircle2');
+                    d.stepCircle3 = document.getElementById('stepCircle3');
+                    d.captchaStepDesc = document.getElementById('captchaStepDesc');
+                    d.toastBox = document.getElementById('toastBox');
+                    d.mainAlertBox = document.getElementById('mainAlertBox');
+                    d.globalOverlay = document.getElementById('globalOverlay');
+                    d.overlayText = document.getElementById('overlayText');
+                    d.errModalOverlay = document.getElementById('errModalOverlay');
+                    d.modalIconWrap = document.getElementById('modalIconWrap');
+                    d.modalIcon = document.getElementById('modalIcon');
+                    d.modalTitle = document.getElementById('modalTitle');
+                    d.modalSubtitle = document.getElementById('modalSubtitle');
+                    d.modalReason = document.getElementById('modalReason');
+                    d.modalFixesList = document.getElementById('modalFixesList');
+                    d.modalActionBtn = document.getElementById('modalActionBtn');
+                    d.ctx = d.drawCanvas.getContext('2d');
+                },
+
+                detectMobile: function() {
+                    var ua = navigator.userAgent.toLowerCase();
+                    var mobs = ['android', 'iphone', 'ipad', 'ipod', 'blackberry', 'windows phone', 'webos'];
+                    var isMobUA = mobs.some(function(k) { return ua.indexOf(k) !== -1; });
+                    var hasTouch = ('ontouchstart' in window || navigator.maxTouchPoints > 0) && window.innerWidth <= 768;
+                    module.state.isMobile = isMobUA || hasTouch;
+                },
+
+                showToast: function(type, text) {
+                    if (module.state.isViolated) return;
+                    var toast = document.createElement('div');
+                    toast.className = 'toast ' + type;
+                    var icon = type === 'success' ? 'ti-circle-check-filled' : 'ti-alert-triangle-filled';
+                    toast.innerHTML = '<i class="ti ' + icon + '"></i><span style="flex:1;font-weight:500;">' + text +
+                        '</span><i class="ti ti-x" style="cursor:pointer;opacity:0.4;font-size:16px;" onclick="this.parentElement.remove()"></i>';
+                    module.dom.toastBox.prepend(toast);
+                    _setTimeout(function() { if (toast.parentElement) toast.remove(); }, 3500);
+                },
+
+                toggleOverlay: function(show, text) {
+                    if (show) {
+                        if (text) module.dom.overlayText.textContent = text;
+                        module.dom.globalOverlay.classList.add('active');
+                    } else {
+                        module.dom.globalOverlay.classList.remove('active');
+                    }
+                },
+
+                updateSubmitBtn: function() {
+                    var s = module.state;
+                    var d = module.dom;
+                    if (s.isViolated) return;
+                    if (s.sessionEnded) {
+                        d.btnSubmit.disabled = true;
+                        d.btnSubmit.innerHTML = '<i class="ti ti-lock"></i> Phiên đã hết hạn';
+                        return;
+                    }
+                    if (s.humanDone) {
+                        d.btnSubmit.disabled = false;
+                        d.btnSubmit.innerHTML = '<i class="ti ti-check" style="font-size:18px;"></i> Chuyển hướng';
+                    } else {
+                        d.btnSubmit.disabled = true;
+                        d.btnSubmit.innerHTML = '<i class="ti ti-lock"></i> Cần xác minh Captcha';
+                    }
+                },
+
+                markHumanDone: function() {
+                    var s = module.state;
+                    var d = module.dom;
+                    if (s.isViolated || s.humanDone) return;
+                    s.humanDone = true;
+                    s.isDrawing = false;
+                    s.mouseButtonDown = false;
+                    if (s.resetTimeout) {
+                        clearTimeout(s.resetTimeout);
+                        s.resetTimeout = null;
+                    }
+                    d.stepCircle2.classList.add('done');
+                    d.stepCircle2.innerHTML = '<i class="ti ti-check" style="font-size:16px;"></i>';
+                    d.stepCircle3.classList.add('done');
+                    d.stepCircle3.innerHTML = '<i class="ti ti-check" style="font-size:16px;"></i>';
+                    d.captchaStepDesc.textContent = 'Xác minh thành công!';
+                    module.core.updateSubmitBtn();
+                    
+                    module.antiCheat.runNetworkCheck();
+                    module.antiCheat.checkExtensions();
+
+                    if (s.isMobile) {
+                        d.shakeBox.style.pointerEvents = 'none';
+                        d.shakeBox.style.opacity = '0.7';
+                        d.shakeBox.style.borderColor = '#059669';
+                        d.shakeBox.style.background = '#f0fdf4';
+                        if (s.motionHandler) window.removeEventListener('devicemotion', s.motionHandler);
+                        d.shakeBox.querySelector('.shake-title').textContent = 'Đã xác minh!';
+                        d.shakeBox.querySelector('.shake-sub').textContent = 'Cảm ơn bạn đã xác minh';
+                    } else {
+                        d.captchaDrawArea.classList.add('success');
+                        d.captchaDrawArea.classList.remove('active', 'failed');
+                        d.drawCanvas.style.pointerEvents = 'none';
+                        d.drawCanvas.style.cursor = 'default';
+                        d.captchaDrawArea.style.cursor = 'default';
+                        d.dotMarkers.style.display = 'none';
+                        d.drawGuideSvg.style.display = 'none';
+                        d.btnReloadCaptcha.style.display = 'none';
+                        d.promptIcon.className = 'ti ti-check';
+                        d.promptTitle.textContent = 'Xác minh thành công!';
+                        d.promptDesc.textContent = 'Tất cả 4 điểm đã được kết nối';
+                        d.captchaPrompt.style.opacity = '1';
+                    }
+                    module.core.showToast('success', 'Xác minh con người thành công!');
+                },
+
+                clearUrlData: function() {
+                    try {
+                        localStorage.clear();
+                        sessionStorage.clear();
+                        if (window.location.search || window.location.hash) {
+                            window.history.replaceState({}, document.title, window.location.pathname);
+                        }
+                    } catch (e) {}
+                },
+
+                startCleanupTimer: function() {
+                    var d = module.dom;
+                    var timeLeft = 10;
+                    d.sessionLabel.style.display = 'none';
+                    d.timeDisplay.style.width = '100%';
+                    d.timeDisplay.style.textAlign = 'center';
+                    d.timeDisplay.style.color = 'var(--danger)';
+                    d.statusBadge.innerText = 'Hết hạn';
+                    d.statusBadge.classList.add('urgent');
+                    d.iconTimer.style.background = '#fee2e2';
+                    d.iconTimer.style.color = '#ef4444';
+                    d.sessionBar.style.backgroundColor = '#ef4444';
+                    d.timeDisplay.innerText = timeLeft + 's';
+                    d.sessionBar.style.width = '100%';
+                    var cleanupInterval = _setInterval(function() {
+                        timeLeft--;
+                        if (timeLeft > 0) {
+                            d.timeDisplay.innerText = timeLeft + 's';
+                            d.sessionBar.style.width = (timeLeft / 10 * 100) + '%';
+                        } else {
+                            clearInterval(cleanupInterval);
+                            d.timeDisplay.innerText = 'FishX';
+                            d.sessionBar.style.width = '0%';
+                            module.core.clearUrlData();
+                        }
+                    }, 1000);
+                },
+
+                updateTimer: function() {
+                    var s = module.state;
+                    var d = module.dom;
+                    if (s.isViolated) return;
+                    var now = Date.now();
+                    var rem = s.sessionExpires - now;
+                    if (rem <= 0) {
+                        clearInterval(s.timerId);
+                        s.sessionEnded = true;
+                        d.btnSubmit.disabled = true;
+                        d.mainAlertBox.style.borderLeftColor = 'var(--danger)';
+                        d.mainAlertBox.style.backgroundColor = '#fee2e2';
+                        d.mainAlertBox.innerHTML = '<div class="alert-title" style="color: var(--danger);"><i class="ti ti-alert-triangle-filled"></i> Nhiệm vụ đã hết hạn</div><div class="alert-list"><div class="alert-item"><i class="ti ti-circle-x-filled" style="color: var(--danger);"></i><span style="color: #991b1b; font-weight: 500;">Phiên làm việc đã kết thúc. Không thể tiếp tục xác minh.</span></div></div>';
+                        module.core.startCleanupTimer();
+                        module.core.updateSubmitBtn();
+                        return;
+                    }
+                    var secs = Math.ceil(rem / 1000);
+                    d.timeDisplay.innerText = String(Math.floor(secs / 60)).padStart(2, '0') + ':' + String(secs % 60).padStart(2, '0');
+                    var percent = (rem / s.TOTAL_MS) * 100;
+                    d.sessionBar.style.width = percent + '%';
+                    if (secs <= 60) {
+                        if (!d.statusBadge.classList.contains('urgent')) {
+                            d.statusBadge.innerText = 'Sắp hết hạn';
+                            d.statusBadge.classList.add('urgent');
+                            d.iconTimer.style.background = '#fee2e2';
+                            d.iconTimer.style.color = '#ef4444';
+                            d.sessionBar.style.backgroundColor = '#ef4444';
+                        }
+                    }
+                },
+
+                initTimer: function() {
+                    var s = module.state;
+                    s.timerId = _setInterval(module.core.updateTimer, 1000);
+                    module.core.updateTimer();
+                },
+
+                initSubmitBtn: function() {
+                    module.dom.btnSubmit.addEventListener('click', function() {
+                        var s = module.state;
+                        if (s.isViolated || s.sessionEnded || !s.humanDone || Date.now() >= s.sessionExpires) return;
+                        this.disabled = true;
+                        this.innerHTML = '<i class="ti ti-loader-2" style="animation:spin 0.7s linear infinite;font-size:18px;"></i> Đang quét bảo mật 3s...';
+                        module.core.toggleOverlay(true, 'Đang phân tích tính toàn vẹn...');
+                        
+                        module.antiCheat.runNetworkCheck();
+                        module.antiCheat.checkExtensions();
+                        
+                        _setTimeout(function() {
+                            if (module.state.isViolated) {
+                                module.core.toggleOverlay(false);
+                                return;
+                            }
+                            module.core.showToast('success', 'Đang chuyển hướng...');
+                            module.dom.btnSubmit.style.background = 'var(--primary-dark)';
+                            module.dom.btnSubmit.innerHTML = '<i class="ti ti-check"></i> Đã hoàn tất';
+                            module.core.toggleOverlay(false);
+                            _setTimeout(function() {
+                                window.location.href = "https://cat.com";
+                            }, 500);
+                        }, 3000);
+                    });
+                }
+            };
+
+            module.pcCaptcha = {
+                generateRandomDots: function() {
+                    var d = module.dom;
+                    var s = module.state;
+                    var w = d.drawCanvas.width;
+                    var h = d.drawCanvas.height;
+                    var marginX = w * 0.12;
+                    var marginY = h * 0.18;
+                    
+                    s.dotPositions = [];
+                    s.dotPositions.push({ x: marginX + 15, y: h / 2, num: 1 });
+                    
+                    var remainingW = w - (marginX + 45) - marginX;
+                    var zoneW = remainingW / (s.totalDots - 1);
+                    var usedYs = [h / 2];
+                    
+                    for (var i = 1; i < s.totalDots; i++) {
+                        var zoneXMin = marginX + 45 + (i - 1) * zoneW;
+                        var zoneXMax = marginX + 45 + i * zoneW;
+                        var x = zoneXMin + Math.random() * (zoneXMax - zoneXMin - 20);
+                        var y;
+                        var attempts = 0;
+                        do {
+                            y = marginY + Math.random() * (h - marginY * 2);
+                            attempts++;
+                        } while (attempts < 30 && usedYs.some(function(uy) { return Math.abs(uy - y) < h * 0.18; }));
+                        usedYs.push(y);
+                        s.dotPositions.push({ x: x, y: y, num: i + 1 });
+                    }
+                    
+                    s.dotsReached = new Array(s.totalDots).fill(false);
+                    s.currentTargetDot = 1;
+                    s.hasStartedFromDot1 = false;
+                },
+
+                drawDotMarkers: function() {
+                    var d = module.dom;
+                    var s = module.state;
+                    d.dotMarkers.innerHTML = '';
+                    if (!s.dotPositions.length) return;
+                    for (var i = 0; i < s.dotPositions.length; i++) {
+                        var dp = s.dotPositions[i];
+                        var el = document.createElement('div');
+                        el.className = 'dot-marker';
+                        el.id = 'dotMarker' + dp.num;
+                        el.textContent = dp.num;
+                        el.style.left = dp.x + 'px';
+                        el.style.top = dp.y + 'px';
+                        if (s.dotsReached[i]) el.classList.add('reached');
+                        if (dp.num === s.currentTargetDot && !s.dotsReached[i]) el.classList.add('next-target');
+                        d.dotMarkers.appendChild(el);
+                    }
+                },
+
+                drawGuideLine: function() {
+                    var d = module.dom;
+                    var s = module.state;
+                    var w = d.drawCanvas.width || 400;
+                    var h = d.drawCanvas.height || 200;
+                    var pts = s.dotPositions;
+                    if (!pts.length) return;
+                    var svgNS = 'http://www.w3.org/2000/svg';
+                    var svg = document.createElementNS(svgNS, 'svg');
+                    svg.setAttribute('width', '100%');
+                    svg.setAttribute('height', '100%');
+                    svg.setAttribute('viewBox', '0 0 ' + w + ' ' + h);
+                    svg.style.cssText = 'position:absolute;top:0;left:0;z-index:1;pointer-events:none;';
+
+                    var defs = document.createElementNS(svgNS, 'defs');
+                    var marker = document.createElementNS(svgNS, 'marker');
+                    marker.setAttribute('id', 'arrowhead');
+                    marker.setAttribute('markerWidth', '8');
+                    marker.setAttribute('markerHeight', '6');
+                    marker.setAttribute('refX', '8');
+                    marker.setAttribute('refY', '3');
+                    marker.setAttribute('orient', 'auto');
+                    var polygon = document.createElementNS(svgNS, 'polygon');
+                    polygon.setAttribute('points', '0 0, 8 3, 0 6');
+                    polygon.setAttribute('fill', '#d1d5db');
+                    marker.appendChild(polygon);
+                    defs.appendChild(marker);
+                    svg.appendChild(defs);
+
+                    for (var i = 0; i < pts.length - 1; i++) {
+                        var p1 = pts[i];
+                        var p2 = pts[i + 1];
+                        var line = document.createElementNS(svgNS, 'line');
+                        line.setAttribute('x1', p1.x);
+                        line.setAttribute('y1', p1.y);
+                        line.setAttribute('x2', p2.x);
+                        line.setAttribute('y2', p2.y);
+                        line.setAttribute('stroke', '#d1d5db');
+                        line.setAttribute('stroke-width', '2');
+                        line.setAttribute('stroke-dasharray', '6,4');
+                        line.setAttribute('marker-end', 'url(#arrowhead)');
+                        svg.appendChild(line);
+                    }
+                    d.drawGuideSvg.innerHTML = '';
+                    d.drawGuideSvg.appendChild(svg);
+                },
+
+                initPcCaptcha: function() {
+                    var s = module.state;
+                    var d = module.dom;
+                    d.captchaDrawArea.style.display = 'flex';
+                    d.shakeBox.style.display = 'none';
+
+                    module.pcCaptcha.resizeCanvas();
+                    module.pcCaptcha.generateRandomDots();
+                    module.pcCaptcha.drawDotMarkers();
+                    module.pcCaptcha.drawGuideLine();
+
+                    d.drawCanvas.addEventListener('mousedown', module.pcCaptcha.handleMouseDown);
+                    d.drawCanvas.addEventListener('mousemove', module.pcCaptcha.handleMouseMove);
+                    d.drawCanvas.addEventListener('mouseup', module.pcCaptcha.handleMouseUp);
+                    d.drawCanvas.addEventListener('mouseleave', module.pcCaptcha.handleMouseLeave);
+                    d.drawCanvas.addEventListener('contextmenu', function(e) { e.preventDefault(); e.stopPropagation(); });
+                    d.drawCanvas.addEventListener('auxclick', function(e) { e.preventDefault(); e.stopPropagation(); });
+                    d.drawCanvas.addEventListener('touchstart', module.pcCaptcha.handleTouchStart, { passive: false });
+                    d.drawCanvas.addEventListener('touchmove', module.pcCaptcha.handleTouchMove, { passive: false });
+                    d.drawCanvas.addEventListener('touchend', module.pcCaptcha.handleTouchEnd);
+                    d.drawCanvas.addEventListener('touchcancel', module.pcCaptcha.handleTouchEnd);
+
+                    d.btnReloadCaptcha.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        if (s.isViolated || s.humanDone || s.isResetting) return;
+                        d.ctx.clearRect(0, 0, d.drawCanvas.width, d.drawCanvas.height);
+                        s.drawingPts = [];
+                        s.drawingTimes = [];
+                        s.dotsReached = new Array(s.totalDots).fill(false);
+                        s.currentTargetDot = 1;
+                        s.hasStartedFromDot1 = false;
+                        module.pcCaptcha.generateRandomDots();
+                        module.pcCaptcha.drawDotMarkers();
+                        module.pcCaptcha.drawGuideLine();
+                        d.promptIcon.className = 'ti ti-pencil';
+                        d.promptTitle.textContent = 'Chạm vào điểm 1 rồi kéo qua 4 điểm';
+                        d.promptDesc.textContent = 'Bắt đầu từ điểm sáng số 1, giữ chuột trái và kéo';
+                        d.captchaPrompt.style.opacity = '1';
+                        module.core.showToast('success', 'Đã làm mới vị trí các điểm xác minh!');
+                    });
+
+                    document.addEventListener('mouseup', function(e) {
+                        if (s.isViolated) return;
+                        if (s.isDrawing && !s.isMobile && s.mouseButtonDown) {
+                            module.pcCaptcha.handleMouseUp(e);
+                        }
+                    });
+
+                    d.captchaDrawArea.addEventListener('mouseleave', function(e) {
+                        if (s.isViolated) return;
+                        if (s.isDrawing && s.mouseButtonDown) {
+                            module.pcCaptcha.handleMouseUp(e);
+                        }
+                    });
+
+                    window.addEventListener('resize', function() {
+                        if (s.isViolated || s.isMobile || s.humanDone) return;
+                        module.pcCaptcha.resizeCanvas();
+                        module.pcCaptcha.generateRandomDots();
+                        module.pcCaptcha.drawDotMarkers();
+                        module.pcCaptcha.drawGuideLine();
+                        module.pcCaptcha.redrawCanvas();
+                    });
+                },
+
+                resizeCanvas: function() {
+                    var d = module.dom;
+                    var r = d.captchaDrawArea.getBoundingClientRect();
+                    d.drawCanvas.width = r.width;
+                    d.drawCanvas.height = r.height;
+                    if (module.state.drawingPts.length > 1) module.pcCaptcha.redrawCanvas();
+                },
+
+                redrawCanvas: function() {
+                    var ctx = module.dom.ctx;
+                    var pts = module.state.drawingPts;
+                    var d = module.dom;
+                    ctx.clearRect(0, 0, d.drawCanvas.width, d.drawCanvas.height);
+                    if (pts.length < 2) return;
+                    ctx.strokeStyle = '#10b981';
+                    ctx.lineWidth = 4;
+                    ctx.lineCap = 'round';
+                    ctx.lineJoin = 'round';
+                    ctx.shadowColor = 'rgba(16,185,129,0.5)';
+                    ctx.shadowBlur = 8;
+                    ctx.beginPath();
+                    ctx.moveTo(pts[0].x, pts[0].y);
+                    for (var i = 1; i < pts.length; i++) {
+                        ctx.lineTo(pts[i].x, pts[i].y);
+                    }
+                    ctx.stroke();
+                    ctx.shadowBlur = 0;
+                },
+
+                getCanvasPos: function(e) {
+                    var r = module.dom.drawCanvas.getBoundingClientRect();
+                    var cx = e.touches ? e.touches[0].clientX : e.clientX;
+                    var cy = e.touches ? e.touches[0].clientY : e.clientY;
+                    return { x: cx - r.left, y: cy - r.top };
+                },
+
+                isNearDot: function(pos, dotIndex) {
+                    var s = module.state;
+                    if (!s.dotPositions[dotIndex]) return false;
+                    var dp = s.dotPositions[dotIndex];
+                    var dx = pos.x - dp.x;
+                    var dy = pos.y - dp.y;
+                    var dist = Math.sqrt(dx * dx + dy * dy);
+                    return dist < s.dotReachRadius;
+                },
+
+                checkDotReach: function(pos) {
+                    var s = module.state;
+                    if (s.currentTargetDot > s.totalDots) return;
+                    var idx = s.currentTargetDot - 1;
+                    if (module.pcCaptcha.isNearDot(pos, idx)) {
+                        s.dotsReached[idx] = true;
+                        s.currentTargetDot++;
+                        module.pcCaptcha.drawDotMarkers();
+                        module.pcCaptcha.drawGuideLine();
+                        if (s.currentTargetDot > s.totalDots) {
+                            _setTimeout(function() { module.core.markHumanDone(); }, 150);
+                        } else {
+                            module.dom.promptTitle.textContent = 'Tốt! Tiếp tục đến điểm ' + s.currentTargetDot;
+                            module.dom.promptDesc.textContent = 'Kéo chuột đến điểm đang phát sáng';
+                        }
+                    }
+                },
+
+                resetCaptcha: function(reason) {
+                    var s = module.state;
+                    var d = module.dom;
+                    if (s.isViolated || s.isResetting) return;
+                    s.isResetting = true;
+                    s.isDrawing = false;
+                    s.mouseButtonDown = false;
+                    if (s.resetTimeout) clearTimeout(s.resetTimeout);
+
+                    s.failedAttempts++;
+                    var forceShuffle = s.failedAttempts >= 3;
+                    if (forceShuffle) {
+                        s.failedAttempts = 0;
+                    }
+
+                    d.captchaDrawArea.classList.add('failed');
+                    d.captchaDrawArea.classList.remove('active');
+                    d.captchaPrompt.style.opacity = '1';
+                    d.promptIcon.className = 'ti ti-exclamation-circle';
+                    d.promptTitle.textContent = reason || 'Chưa hoàn thành!';
+                    d.promptDesc.textContent = 'Bạn mới đến điểm ' + (s.currentTargetDot - 1) + '/4, vẽ lại từ điểm 1';
+                    
+                    if (forceShuffle) {
+                        module.antiCheat.triggerViolation('ERR_CHEAT_AUTOMATION');
+                        return;
+                    } else {
+                        module.core.showToast('error', 'Bạn mới đến điểm ' + (s.currentTargetDot - 1) + '/4, vẽ lại từ điểm 1');
+                    }
+
+                    s.resetTimeout = _setTimeout(function() {
+                        if (s.isViolated) return;
+                        d.captchaDrawArea.classList.remove('failed');
+                        d.ctx.clearRect(0, 0, d.drawCanvas.width, d.drawCanvas.height);
+                        s.drawingPts = [];
+                        s.drawingTimes = [];
+                        
+                        s.dotsReached = new Array(s.totalDots).fill(false);
+                        s.currentTargetDot = 1;
+                        s.hasStartedFromDot1 = false;
+                        
+                        s.isResetting = false;
+                        s.resetTimeout = null;
+                        module.pcCaptcha.drawDotMarkers();
+                        module.pcCaptcha.drawGuideLine();
+                        d.promptIcon.className = 'ti ti-pencil';
+                        d.promptTitle.textContent = 'Chạm vào điểm 1 rồi kéo qua 4 điểm';
+                        d.promptDesc.textContent = 'Bắt đầu từ điểm sáng số 1, giữ chuột trái và kéo';
+                        d.captchaPrompt.style.opacity = '1';
+                    }, 1800);
+                },
+
+                startDrawing: function(pos) {
+                    var s = module.state;
+                    var d = module.dom;
+                    s.isDrawing = true;
+                    s.hasStartedFromDot1 = true;
+                    s.drawingPts = [];
+                    s.drawingTimes = [];
+                    s.dotsReached = new Array(s.totalDots).fill(false);
+                    s.currentTargetDot = 1;
+                    s.drawingPts.push(pos);
+                    s.drawingTimes.push(Date.now());
+                    d.captchaDrawArea.classList.add('active');
+                    d.captchaDrawArea.classList.remove('success', 'failed');
+                    d.ctx.clearRect(0, 0, d.drawCanvas.width, d.drawCanvas.height);
+                    module.pcCaptcha.drawDotMarkers();
+                    module.pcCaptcha.drawGuideLine();
+                    d.captchaPrompt.style.opacity = '0.35';
+                    d.promptTitle.textContent = 'Đang vẽ... Đi đến điểm 1';
+                    d.promptDesc.textContent = 'Giữ chuột trái và kéo qua 4 điểm';
+                    module.pcCaptcha.checkDotReach(pos);
+                },
+
+                handleMouseDown: function(e) {
+                    var s = module.state;
+                    if (s.isViolated || s.humanDone || s.isMobile || s.isResetting) return;
+                    if (e.button !== 0) return;
+                    e.preventDefault();
+                    e.stopPropagation();
+                    s.mouseButtonDown = true;
+                    var p = module.pcCaptcha.getCanvasPos(e);
+                    if (!module.pcCaptcha.isNearDot(p, 0)) {
+                        document.getElementById('captchaDrawArea').classList.add('failed');
+                        document.getElementById('captchaPrompt').style.opacity = '1';
+                        document.getElementById('promptIcon').className = 'ti ti-exclamation-circle';
+                        document.getElementById('promptTitle').textContent = 'Phải bắt đầu từ điểm 1!';
+                        document.getElementById('promptDesc').textContent = 'Nhấn giữ chuột trái vào điểm sáng số 1';
+                        module.core.showToast('error', 'Phải bắt đầu từ điểm số 1!');
+                        s.mouseButtonDown = false;
+                        _setTimeout(function() {
+                            if (s.isViolated || s.humanDone) return;
+                            document.getElementById('captchaDrawArea').classList.remove('failed');
+                            document.getElementById('promptIcon').className = 'ti ti-pencil';
+                            document.getElementById('promptTitle').textContent = 'Chạm vào điểm 1 rồi kéo qua 4 điểm';
+                            document.getElementById('promptDesc').textContent = 'Bắt đầu từ điểm sáng số 1, giữ chuột trái và kéo';
+                        }, 1500);
+                        return;
+                    }
+                    module.pcCaptcha.startDrawing(p);
+                },
+
+                handleMouseMove: function(e) {
+                    var s = module.state;
+                    if (s.isViolated || !s.isDrawing || s.humanDone || s.isMobile || s.isResetting) return;
+                    if (!s.mouseButtonDown) {
+                        module.pcCaptcha.handleMouseUp(e);
+                        return;
+                    }
+                    e.preventDefault();
+                    var p = module.pcCaptcha.getCanvasPos(e);
+                    s.drawingPts.push(p);
+                    s.drawingTimes.push(Date.now());
+                    module.pcCaptcha.redrawCanvas();
+                    module.pcCaptcha.checkDotReach(p);
+                },
+
+                handleMouseUp: function(e) {
+                    var s = module.state;
+                    if (s.isViolated || !s.isDrawing || s.humanDone || s.isMobile) return;
+                    s.mouseButtonDown = false;
+                    s.isDrawing = false;
+                    if (s.currentTargetDot <= s.totalDots) {
+                        module.pcCaptcha.resetCaptcha('Chưa hoàn thành! Cần qua đủ 4 điểm');
+                    }
+                },
+
+                handleMouseLeave: function(e) {
+                    var s = module.state;
+                    if (s.isViolated) return;
+                    if (s.isDrawing && s.mouseButtonDown && !s.humanDone && !s.isMobile) {
+                        module.pcCaptcha.handleMouseUp(e);
+                    }
+                },
+
+                handleTouchStart: function(e) {
+                    var s = module.state;
+                    if (s.isViolated || s.humanDone || s.isMobile || s.isResetting) return;
+                    e.preventDefault();
+                    var p = module.pcCaptcha.getCanvasPos(e);
+                    if (!module.pcCaptcha.isNearDot(p, 0)) {
+                        document.getElementById('captchaDrawArea').classList.add('failed');
+                        document.getElementById('captchaPrompt').style.opacity = '1';
+                        document.getElementById('promptIcon').className = 'ti ti-exclamation-circle';
+                        document.getElementById('promptTitle').textContent = 'Phải bắt đầu từ điểm 1!';
+                        document.getElementById('promptDesc').textContent = 'Chạm vào điểm sáng số 1 để bắt đầu';
+                        _setTimeout(function() {
+                            if (s.isViolated || s.humanDone) return;
+                            document.getElementById('captchaDrawArea').classList.remove('failed');
+                            document.getElementById('promptIcon').className = 'ti ti-pencil';
+                            document.getElementById('promptTitle').textContent = 'Chạm vào điểm 1 rồi kéo qua 4 điểm';
+                            document.getElementById('promptDesc').textContent = 'Bắt đầu từ điểm sáng số 1';
+                        }, 1500);
+                        return;
+                    }
+                    module.pcCaptcha.startDrawing(p);
+                },
+
+                handleTouchMove: function(e) {
+                    var s = module.state;
+                    if (s.isViolated || !s.isDrawing || s.humanDone || s.isMobile || s.isResetting) return;
+                    e.preventDefault();
+                    var p = module.pcCaptcha.getCanvasPos(e);
+                    s.drawingPts.push(p);
+                    s.drawingTimes.push(Date.now());
+                    module.pcCaptcha.redrawCanvas();
+                    module.pcCaptcha.checkDotReach(p);
+                },
+
+                handleTouchEnd: function(e) {
+                    var s = module.state;
+                    if (s.isViolated || !s.isDrawing || s.humanDone || s.isMobile) return;
+                    s.isDrawing = false;
+                    if (s.currentTargetDot <= s.totalDots) {
+                        module.pcCaptcha.resetCaptcha('Chưa hoàn thành! Cần qua đủ 4 điểm');
+                    }
+                }
+            };
+
+            module.mobiCaptcha = {
+                initMobileCaptcha: function() {
+                    var d = module.dom;
+                    d.captchaDrawArea.style.display = 'none';
+                    d.shakeBox.style.display = 'flex';
+
+                    if (typeof DeviceMotionEvent !== 'undefined') {
+                        if (typeof DeviceMotionEvent.requestPermission === 'function') {
+                            d.shakeBox.addEventListener('click', function askPerm() {
+                                if (module.state.isViolated) return;
+                                DeviceMotionEvent.requestPermission().then(function(state) {
+                                    if (state === 'granted') {
+                                        module.mobiCaptcha.startMotion();
+                                        d.shakeBox.removeEventListener('click', askPerm);
+                                        d.shakeBox.style.cursor = 'default';
+                                    } else {
+                                        module.mobiCaptcha.fallbackTouch();
+                                    }
+                                }).catch(function() { module.mobiCaptcha.fallbackTouch(); });
+                            });
+                            d.shakeBox.style.cursor = 'pointer';
+                            d.shakeBox.querySelector('.shake-title').textContent = 'Chạm vào đây để bắt đầu';
+                            d.shakeBox.querySelector('.shake-sub').textContent = 'Cấp quyền cảm biến để lắc máy';
+                        } else {
+                            module.mobiCaptcha.startMotion();
+                        }
+                    } else {
+                        module.mobiCaptcha.fallbackTouch();
+                    }
+                },
+
+                startMotion: function() {
+                    var s = module.state;
+                    var d = module.dom;
+                    d.shakeBox.querySelector('.shake-title').textContent = 'Lắc điện thoại của bạn';
+                    d.shakeBox.querySelector('.shake-sub').textContent = 'Lắc mạnh 3 lần để xác minh';
+                    var lastX = null, lastY = null, lastZ = null;
+                    s.motionHandler = function(e) {
+                        if (s.isViolated || s.humanDone || s.sessionEnded) return;
+                        var a = e.accelerationIncludingGravity;
+                        if (!a || a.x === null) return;
+                        var x = a.x || 0, y = a.y || 0, z = a.z || 0;
+                        if (lastX !== null) {
+                            var dx = Math.abs(x - lastX);
+                            var dy = Math.abs(y - lastY);
+                            var dz = Math.abs(z - lastZ);
+                            var total = Math.sqrt(dx * dx + dy * dy + dz * dz);
+                            var now = Date.now();
+                            if (total > s.SHAKE_FORCE && now - s.lastShakeMs > s.SHAKE_COOLDOWN) {
+                                s.lastShakeMs = now;
+                                s.shakeCount++;
+                                module.mobiCaptcha.updateShakeUI();
+                                if (s.shakeCount >= s.NEED_SHAKES) module.core.markHumanDone();
+                            }
+                        }
+                        lastX = x; lastY = y; lastZ = z;
+                    };
+                    window.addEventListener('devicemotion', s.motionHandler);
+                },
+
+                updateShakeUI: function() {
+                    var s = module.state;
+                    var d = module.dom;
+                    if (s.isViolated) return;
+                    var pct = Math.min((s.shakeCount / s.NEED_SHAKES) * 100, 100);
+                    d.shakeFill.style.width = pct + '%';
+                    d.shakeCountText.textContent = s.shakeCount + ' / ' + s.NEED_SHAKES + ' lần lắc';
+                    var dots = d.shakeDots.querySelectorAll('.shake-dot');
+                    for (var i = 0; i < dots.length; i++) {
+                        if (i < s.shakeCount) {
+                            dots[i].classList.add('filled');
+                        } else {
+                            dots[i].classList.remove('filled');
+                        }
+                    }
+                    if (s.shakeCount > 0 && s.shakeCount < s.NEED_SHAKES) {
+                        d.shakeBox.classList.add('shaking');
+                        _setTimeout(function() { d.shakeBox.classList.remove('shaking'); }, 200);
+                    }
+                },
+
+                fallbackTouch: function() {
+                    var d = module.dom;
+                    var s = module.state;
+                    d.shakeBox.innerHTML = '<div class="shake-icon-wrap"><i class="ti ti-hand-click"></i></div><div class="shake-title">Chạm nhanh 3 lần</div><div class="shake-sub">Chạm vào đây 3 lần để xác minh</div><div class="shake-dots" id="shakeDots"><div class="shake-dot"></div><div class="shake-dot"></div><div class="shake-dot"></div></div><div class="shake-bar"><div class="shake-bar-fill" id="shakeFill" style="width:0%"></div></div><div class="shake-count" id="shakeCountText">0 / 3 lần chạm</div>';
+                    var taps = 0;
+                    var shakeFillEl = document.getElementById('shakeFill');
+                    var shakeCountTextEl = document.getElementById('shakeCountText');
+                    var shakeDotsEl = document.getElementById('shakeDots');
+                    d.shakeBox.addEventListener('click', function() {
+                        if (s.isViolated || s.humanDone || s.sessionEnded) return;
+                        taps++;
+                        s.shakeCount = taps;
+                        var pct = Math.min((taps / s.NEED_SHAKES) * 100, 100);
+                        if (shakeFillEl) shakeFillEl.style.width = pct + '%';
+                        if (shakeCountTextEl) shakeCountTextEl.textContent = taps + ' / ' + s.NEED_SHAKES + ' lần chạm';
+                        if (shakeDotsEl) {
+                            var dots = shakeDotsEl.querySelectorAll('.shake-dot');
+                            for (var i = 0; i < dots.length; i++) {
+                                if (i < taps) dots[i].classList.add('filled');
+                                else dots[i].classList.remove('filled');
+                            }
+                        }
+                        if (taps >= s.NEED_SHAKES) module.core.markHumanDone();
+                    });
+                }
+            };
+
+            module.antiCheat = {
+                checkIncognito: function() {
+                    var fs = window.RequestFileSystem || window.webkitRequestFileSystem;
+                    if (!fs) {
+                        if (navigator.storage && navigator.storage.estimate) {
+                            navigator.storage.estimate().then(function(est) {
+                                if (est.quota < 300000000) module.antiCheat.triggerViolation('ERR_INCOGNITO');
+                            });
+                        }
+                    } else {
+                        fs(window.TEMPORARY, 100, function(){}, function() {
+                            module.antiCheat.triggerViolation('ERR_INCOGNITO');
+                        });
+                    }
+                },
+                
+                runNetworkCheck: function() {
+                    _fetch('https://ipapi.co/json/?t=' + Date.now(), { cache: 'no-store' })
+                        .then(function(res) { return res.json(); })
+                        .then(function(data) {
+                            if (data.country !== 'VN' || (data.org && data.org.match(/cloud|host|digitalocean|amazon|ovh|choopa|colocrossing/i))) {
+                                module.antiCheat.triggerViolation('ERR_VPN_PROXY');
+                            }
+                        }).catch(function() {});
+                        
+                    var urls = [
+                        'https://cloudflare.com/cdn-cgi/trace',
+                        'https://1.1.1.1/cdn-cgi/trace'
+                    ];
+                    for (var i = 0; i < urls.length; i++) {
+                        _fetch(urls[i] + '?t=' + Date.now(), { mode: 'cors', cache: 'no-store' })
+                            .then(function(res) { return res.text(); })
+                            .then(function(data) {
+                                if (data.indexOf('warp=on') !== -1 || data.indexOf('warp=plus') !== -1) {
+                                    module.antiCheat.triggerViolation('ERR_VPN_PROXY');
+                                }
+                                var match = data.match(/loc=([A-Z]+)/);
+                                if (match && match[1] !== 'VN') {
+                                    module.antiCheat.triggerViolation('ERR_VPN_PROXY');
+                                }
+                            }).catch(function() {});
+                    }
+                },
+
+                checkExtensions: function() {
+                    _fetch('https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js', { mode: 'no-cors', cache: 'no-store' })
+                        .catch(function() {
+                            module.antiCheat.triggerViolation('ERR_EXTENSION_BLOCK');
+                        });
+
+                    var bait = document.createElement('div');
+                    bait.className = 'ad-banner doubleclick adsbox ad-slot';
+                    bait.style.position = 'absolute';
+                    bait.style.top = '-9999px';
+                    bait.style.height = '10px';
+                    document.body.appendChild(bait);
+                    _setTimeout(function() {
+                        if (bait.offsetHeight === 0 || window.getComputedStyle(bait).display === 'none') {
+                            module.antiCheat.triggerViolation('ERR_EXTENSION_BLOCK');
+                        }
+                        if (bait.parentNode) bait.parentNode.removeChild(bait);
+                    }, 500);
+
+                    var suspiciousVars = ['GM_info', 'TM_ENV', '__TAMPERMONKEY_ENVIROMENT__', 'cdc_adoQpoasnfa76pfcZLmcfl_', '$cdc_asdjflasutopfhvcZLmcfl_'];
+                    for (var i = 0; i < suspiciousVars.length; i++) {
+                        if (window[suspiciousVars[i]] !== undefined) {
+                            module.antiCheat.triggerViolation('ERR_EXTENSION_BLOCK');
+                        }
+                    }
+                },
+
+                initAntiCheat: function() {
+                    if (!isHooked(window.fetch) || !isHooked(window.setInterval)) {
+                        module.antiCheat.triggerViolation('ERR_EXTENSION_BLOCK');
+                        return;
+                    }
+
+                    var rtc = window.RTCPeerConnection || window.mozRTCPeerConnection || window.webkitRTCPeerConnection;
+                    if (!rtc) {
+                        module.antiCheat.triggerViolation('ERR_VPN_PROXY');
+                    }
+
+                    if (navigator.hardwareConcurrency === 0 || navigator.deviceMemory === 0 || navigator.plugins.length === 0 && !module.state.isMobile) {
+                        module.antiCheat.triggerViolation('ERR_CHEAT_AUTOMATION');
+                    }
+
+                    module.antiCheat.checkIncognito();
+                    
+                    module.state.networkCheckInterval = _setInterval(module.antiCheat.runNetworkCheck, 3000);
+                    module.state.extensionCheckInterval = _setInterval(module.antiCheat.checkExtensions, 3000);
+
+                    document.addEventListener('keydown', function(e) {
+                        if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && ['I', 'J', 'C'].includes(e.key)) || (e.ctrlKey && e.key === 'U')) {
+                            e.preventDefault();
+                            module.antiCheat.triggerViolation('ERR_CHEAT_DEVTOOLS');
+                        }
+                    }, true);
+
+                    document.addEventListener('contextmenu', function(e) { 
+                        e.preventDefault(); 
+                    });
+
+                    window.addEventListener('blur', function() {
+                        if (!module.state.humanDone && !module.state.sessionEnded) {
+                            module.antiCheat.triggerViolation('ERR_CHEAT_BLUR');
+                        }
+                    });
+
+                    document.addEventListener('visibilitychange', function() {
+                        if (document.hidden && !module.state.humanDone && !module.state.sessionEnded) {
+                            module.antiCheat.triggerViolation('ERR_CHEAT_BLUR');
+                        }
+                    });
+
+                    if (navigator.webdriver || window.document.documentElement.getAttribute("webdriver")) {
+                        module.antiCheat.triggerViolation('ERR_CHEAT_AUTOMATION');
+                    }
+
+                    var tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+                    if (tz !== 'Asia/Ho_Chi_Minh' && tz !== 'Asia/Saigon' && tz !== 'Asia/Bangkok' && tz !== 'Asia/Vientiane') {
+                        module.antiCheat.triggerViolation('ERR_VPN_PROXY');
+                    }
+
+                    _setInterval(function() {
+                        var threshold = 160;
+                        if (window.outerWidth > 0 && (window.outerWidth - window.innerWidth > threshold || window.outerHeight - window.innerHeight > threshold)) {
+                            module.antiCheat.triggerViolation('ERR_CHEAT_DEVTOOLS');
+                        }
+                        var t0 = performance.now();
+                        debugger;
+                        var t1 = performance.now();
+                        if (t1 - t0 > 100) {
+                            module.antiCheat.triggerViolation('ERR_CHEAT_DEVTOOLS');
+                        }
+                    }, 200);
+                },
+
+                triggerViolation: function(errKey) {
+                    if (module.state.isViolated) return;
+                    module.state.isViolated = true;
+
+                    if (module.state.networkCheckInterval) clearInterval(module.state.networkCheckInterval);
+                    if (module.state.extensionCheckInterval) clearInterval(module.state.extensionCheckInterval);
+
+                    var d = module.dom;
+                    d.btnSubmit.disabled = true;
+                    d.captchaDrawArea.style.pointerEvents = 'none';
+                    d.shakeBox.style.pointerEvents = 'none';
+                    d.btnReloadCaptcha.style.pointerEvents = 'none';
+                    
+                    if (module.state.motionHandler) {
+                        window.removeEventListener('devicemotion', module.state.motionHandler);
+                    }
+
+                    var error = module.errorCatalog[errKey];
+                    if (!error) return;
+
+                    d.modalIconWrap.className = 'modal-icon-wrap ' + error.iconClass;
+                    d.modalIcon.className = 'ti ' + error.icon;
+                    d.modalTitle.textContent = error.title;
+                    d.modalSubtitle.textContent = error.subtitle;
+                    d.modalReason.textContent = error.reason;
+
+                    d.modalFixesList.innerHTML = '';
+                    error.fixes.forEach(function(fix) {
+                        var item = document.createElement('div');
+                        item.className = 'modal-fix-item';
+                        item.innerHTML = '<i class="ti ti-circle-check-filled"></i><span>' + fix + '</span>';
+                        d.modalFixesList.appendChild(item);
+                    });
+
+                    d.modalActionBtn.textContent = error.action.label;
+                    d.modalActionBtn.onclick = error.action.fn;
+
+                    d.errModalOverlay.classList.add('active');
+                },
+
+                closeErrModal: function() {
+                    module.dom.errModalOverlay.classList.remove('active');
+                }
+            };
+
+            module.init = function() {
+                module.core.initDom();
+                module.core.detectMobile();
+                module.core.clearUrlData();
+                module.core.initTimer();
+                module.antiCheat.initAntiCheat();
+                module.core.initSubmitBtn();
+                module.core.updateSubmitBtn();
+
+                if (module.state.isMobile) {
+                    module.mobiCaptcha.initMobileCaptcha();
+                } else {
+                    module.pcCaptcha.initPcCaptcha();
+                }
+
+                var spinStyle = document.createElement('style');
+                spinStyle.textContent = '@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}';
+                document.head.appendChild(spinStyle);
+            };
+
+            return module;
+        })();
+
+        fishX.init();
+    </script>
+</body>
+</html>
