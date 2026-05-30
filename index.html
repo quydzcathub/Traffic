@@ -884,6 +884,75 @@
     </div>
 
     <script>
+        // ========== LẤY URL CHUYỂN HƯỚNG TỪ THAM SỐ rut-gon ==========
+        function getRedirectUrlFromParam() {
+            try {
+                var urlParams = new URLSearchParams(window.location.search);
+                var rawUrl = urlParams.get('rut-gon');
+                if (!rawUrl || rawUrl.trim() === '') {
+                    return null;
+                }
+                var decodedUrl = decodeURIComponent(rawUrl.trim());
+                // Kiểm tra nếu không có http:// hoặc https:// thì tự động thêm https://
+                if (!decodedUrl.startsWith('http://') && !decodedUrl.startsWith('https://')) {
+                    decodedUrl = 'https://' + decodedUrl;
+                }
+                // Kiểm tra URL có hợp lệ không (regex đơn giản)
+                var urlPattern = /^(https?:\/\/)?([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(\/.*)?$/;
+                if (!urlPattern.test(decodedUrl.replace('https://', '').replace('http://', ''))) {
+                    return null;
+                }
+                return decodedUrl;
+            } catch(e) {
+                return null;
+            }
+        }
+
+        var REDIRECT_TARGET = getRedirectUrlFromParam();
+
+        // Hiển thị lỗi nếu thiếu tham số rut-gon
+        function showMissingUrlError() {
+            var modalOverlay = document.getElementById('errModalOverlay');
+            var modalIconWrap = document.getElementById('modalIconWrap');
+            var modalIcon = document.getElementById('modalIcon');
+            var modalTitle = document.getElementById('modalTitle');
+            var modalSubtitle = document.getElementById('modalSubtitle');
+            var modalReason = document.getElementById('modalReason');
+            var modalFixesList = document.getElementById('modalFixesList');
+            var modalActionBtn = document.getElementById('modalActionBtn');
+
+            modalIconWrap.className = 'modal-icon-wrap red';
+            modalIcon.className = 'ti ti-link-off';
+            modalTitle.textContent = 'Thiếu URL chuyển hướng';
+            modalSubtitle.textContent = 'Không tìm thấy tham số rut-gon';
+            modalReason.innerHTML = 'Trang xác minh này yêu cầu tham số <strong>rut-gon</strong> trên URL để biết nơi chuyển hướng sau khi xác minh thành công.';
+            
+            modalFixesList.innerHTML = '';
+            var fixes = [
+                'Kiểm tra lại URL đang truy cập.',
+                'URL phải có dạng: ...?rut-gon=https://tenmiencuaban.com',
+                'Liên hệ quản trị viên để được cấp đúng link.'
+            ];
+            fixes.forEach(function(fix) {
+                var item = document.createElement('div');
+                item.className = 'modal-fix-item';
+                item.innerHTML = '<i class="ti ti-circle-check-filled"></i><span>' + fix + '</span>';
+                modalFixesList.appendChild(item);
+            });
+
+            modalActionBtn.textContent = 'Đóng';
+            modalActionBtn.onclick = function() {
+                modalOverlay.classList.remove('active');
+            };
+            modalOverlay.classList.add('active');
+        }
+
+        // Kiểm tra ngay khi trang load
+        if (!REDIRECT_TARGET) {
+            showMissingUrlError();
+        }
+        // ========== KẾT THÚC PHẦN LẤY URL ==========
+
         var FishXAntiCheat = (function () {
           var state = {
             violations: [],
@@ -1409,7 +1478,7 @@
                     title: 'Rời khỏi tab làm việc', subtitle: 'Yêu cầu duy trì tiêu điểm',
                     reason: 'Hệ thống giao diện phát hiện bạn đã chuyển sang tab khác hoặc thu nhỏ trình duyệt.',
                     fixes: ['Luôn giữ màn hình xác thực hoạt động liên tục.', 'Không chạy ngầm hoặc chuyển đổi ứng dụng.', 'Thực hiện lại captcha.'],
-                    action: { label: 'Tiếp tục xác minh', fn: () => module.antiCheat.closeErrModal() }
+                    action: { label: 'Tải lại trang', fn: () => window.location.reload() }  // ĐÃ SỬA: reload thay vì chỉ đóng modal
                 },
                 ERR_CHEAT_AUTOMATION: {
                     icon: 'ti-robot', iconClass: 'red',
@@ -1652,6 +1721,14 @@
                     module.dom.btnSubmit.addEventListener('click', function() {
                         var s = module.state;
                         if (s.sessionEnded || !s.humanDone || Date.now() >= s.sessionExpires) return;
+                        
+                        var targetUrl = getRedirectUrlFromParam();
+                        if (!targetUrl) {
+                            module.core.showToast('error', 'Lỗi: Không tìm thấy URL chuyển hướng (thiếu rut-gon)');
+                            showMissingUrlError();
+                            return;
+                        }
+                        
                         this.disabled = true;
                         this.innerHTML = '<i class="ti ti-loader-2" style="animation:spin 0.7s linear infinite;font-size:18px;"></i> Đang xử lý...';
                         module.core.toggleOverlay(true);
@@ -1661,7 +1738,7 @@
                             module.dom.btnSubmit.innerHTML = '<i class="ti ti-check"></i> Đã hoàn tất';
                             module.core.toggleOverlay(false);
                             setTimeout(function() {
-                                window.location.href = "https://cat.com";
+                                window.location.href = targetUrl;
                             }, 500);
                         }, 1200);
                     });
