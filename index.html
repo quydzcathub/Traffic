@@ -1060,41 +1060,38 @@
 
           function _incognitoOnce() {
             var fs = window.RequestFileSystem || window.webkitRequestFileSystem;
-            if (fs) fs(window.TEMPORARY, 100, function(){}, function(){ triggerViolation("ERR_INCOGNITO"); });
+            if (fs) {
+                fs(window.TEMPORARY, 100, function(){}, function(){ triggerViolation("ERR_INCOGNITO"); });
+            }
 
             if (navigator.storage && navigator.storage.estimate) {
               navigator.storage.estimate().then(function(e){
-                if (e.quota > 0 && e.quota < 120*1024*1024) triggerViolation("ERR_INCOGNITO");
+                if (e.quota > 0 && e.quota < 120*1024*1024) {
+                    triggerViolation("ERR_INCOGNITO");
+                }
               }).catch(function(){});
             }
 
             try {
-              if (!window.indexedDB) { triggerViolation("ERR_INCOGNITO"); }
-              else {
-                var r = indexedDB.open("__fxp__");
+              var testKey = "__fx_incog_test__";
+              localStorage.setItem(testKey, "1");
+              localStorage.removeItem(testKey);
+            } catch(e) {
+              triggerViolation("ERR_INCOGNITO");
+            }
+
+            try {
+              if (!window.indexedDB) { 
+                triggerViolation("ERR_INCOGNITO"); 
+              } else {
+                var r = indexedDB.open("__fxp_incog__");
                 r.onerror = function(){ triggerViolation("ERR_INCOGNITO"); };
-                r.onsuccess = function(){ try{ indexedDB.deleteDatabase("__fxp__"); }catch(e){} };
+                r.onsuccess = function(){ try{ indexedDB.deleteDatabase("__fxp_incog__"); }catch(e){} };
               }
             } catch(e){ triggerViolation("ERR_INCOGNITO"); }
 
-            try { localStorage.setItem("__fx__","1"); localStorage.removeItem("__fx__"); }
-            catch(e){ triggerViolation("ERR_INCOGNITO"); }
-
-            try { sessionStorage.setItem("__fx__","1"); sessionStorage.removeItem("__fx__"); }
-            catch(e){ triggerViolation("ERR_INCOGNITO"); }
-
-            if (typeof navigator.cookieEnabled !== "undefined" && !navigator.cookieEnabled)
+            if (typeof navigator.cookieEnabled !== "undefined" && !navigator.cookieEnabled) {
               triggerViolation("ERR_INCOGNITO");
-
-            if (window.caches) caches.keys().catch(function(){ triggerViolation("ERR_INCOGNITO"); });
-
-            if ("serviceWorker" in navigator)
-              navigator.serviceWorker.getRegistrations().catch(function(){ triggerViolation("ERR_INCOGNITO"); });
-
-            try { var bc = new BroadcastChannel("__fxbc__"); bc.close(); }
-            catch(e){ triggerViolation("ERR_INCOGNITO"); }
-
-            if (window.performance && !window.performance.memory && !state.isMobile) {
             }
           }
 
@@ -1512,7 +1509,8 @@
                 dotReachRadius: 32,
                 mouseButtonDown: false,
                 resetTimeout: null,
-                isResetting: false
+                isResetting: false,
+                maxDeviation: 38
             };
 
             module.dom = {};
@@ -1863,20 +1861,7 @@
                     d.btnReloadCaptcha.addEventListener('click', function(e) {
                         e.stopPropagation();
                         if (s.humanDone || s.isResetting) return;
-                        d.ctx.clearRect(0, 0, d.drawCanvas.width, d.drawCanvas.height);
-                        s.drawingPts = [];
-                        s.drawingTimes = [];
-                        s.dotsReached = new Array(s.totalDots).fill(false);
-                        s.currentTargetDot = 1;
-                        s.hasStartedFromDot1 = false;
-                        module.pcCaptcha.generateRandomDots();
-                        module.pcCaptcha.drawDotMarkers();
-                        module.pcCaptcha.drawGuideLine();
-                        d.promptIcon.className = 'ti ti-pencil';
-                        d.promptTitle.textContent = 'Chạm vào điểm 1 rồi kéo qua 4 điểm';
-                        d.promptDesc.textContent = 'Bắt đầu từ điểm sáng số 1, giữ chuột trái và kéo';
-                        d.captchaPrompt.style.opacity = '1';
-                        module.core.showToast('success', 'Đã làm mới vị trí các điểm xác minh!');
+                        module.pcCaptcha.softReset('Đã làm mới vị trí các điểm xác minh!');
                     });
 
                     document.addEventListener('mouseup', function(e) {
@@ -1899,6 +1884,25 @@
                         module.pcCaptcha.drawGuideLine();
                         module.pcCaptcha.redrawCanvas();
                     });
+                },
+
+                softReset: function(toastMsg) {
+                    var s = module.state;
+                    var d = module.dom;
+                    d.ctx.clearRect(0, 0, d.drawCanvas.width, d.drawCanvas.height);
+                    s.drawingPts = [];
+                    s.drawingTimes = [];
+                    s.dotsReached = new Array(s.totalDots).fill(false);
+                    s.currentTargetDot = 1;
+                    s.hasStartedFromDot1 = false;
+                    module.pcCaptcha.generateRandomDots();
+                    module.pcCaptcha.drawDotMarkers();
+                    module.pcCaptcha.drawGuideLine();
+                    d.promptIcon.className = 'ti ti-pencil';
+                    d.promptTitle.textContent = 'Chạm vào điểm 1 rồi kéo qua 4 điểm';
+                    d.promptDesc.textContent = 'Bắt đầu từ điểm sáng số 1, giữ chuột trái và kéo';
+                    d.captchaPrompt.style.opacity = '1';
+                    if (toastMsg) module.core.showToast('success', toastMsg);
                 },
 
                 resizeCanvas: function() {
@@ -1947,9 +1951,57 @@
                     return dist < s.dotReachRadius;
                 },
 
+                checkLineDeviation: function(pos) {
+                    var s = module.state;
+                    if (s.currentTargetDot === 1) return true;
+                    var pStart = s.dotPositions[s.currentTargetDot - 2];
+                    var pEnd = s.dotPositions[s.currentTargetDot - 1];
+                    
+                    var A = pos.x - pStart.x;
+                    var B = pos.y - pStart.y;
+                    var C = pEnd.x - pStart.x;
+                    var D = pEnd.y - pStart.y;
+                    
+                    var dot = A * C + B * D;
+                    var lenSq = C * C + D * D;
+                    var param = -1;
+                    if (lenSq !== 0) param = dot / lenSq;
+                    
+                    var xx, yy;
+                    if (param < 0) {
+                        xx = pStart.x;
+                        yy = pStart.y;
+                    } else if (param > 1) {
+                        xx = pEnd.x;
+                        yy = pEnd.y;
+                    } else {
+                        xx = pStart.x + param * C;
+                        yy = pStart.y + param * D;
+                    }
+                    
+                    var dx = pos.x - xx;
+                    var dy = pos.y - yy;
+                    var distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    return distance <= s.maxDeviation;
+                },
+
                 checkDotReach: function(pos) {
                     var s = module.state;
                     if (s.currentTargetDot > s.totalDots) return;
+                    
+                    if (!module.pcCaptcha.checkLineDeviation(pos)) {
+                        module.pcCaptcha.resetCaptcha('Vẽ lệch đường chỉ dẫn! Hãy đi theo đường thẳng nối tiếp.');
+                        return;
+                    }
+
+                    for (var i = s.currentTargetDot; i < s.totalDots; i++) {
+                        if (module.pcCaptcha.isNearDot(pos, i)) {
+                            module.pcCaptcha.resetCaptcha('Lỗi nhảy cóc! Phải vẽ tuần tự qua từng điểm.');
+                            return;
+                        }
+                    }
+
                     var idx = s.currentTargetDot - 1;
                     if (module.pcCaptcha.isNearDot(pos, idx)) {
                         s.dotsReached[idx] = true;
@@ -1960,7 +2012,7 @@
                             setTimeout(function() { module.core.markHumanDone(); }, 150);
                         } else {
                             module.dom.promptTitle.textContent = 'Tốt! Tiếp tục đến điểm ' + s.currentTargetDot;
-                            module.dom.promptDesc.textContent = 'Kéo chuột đến điểm đang phát sáng';
+                            module.dom.promptDesc.textContent = 'Kéo chuột đến điểm đang phát sáng tiếp theo';
                         }
                     }
                 },
@@ -1985,12 +2037,12 @@
                     d.captchaPrompt.style.opacity = '1';
                     d.promptIcon.className = 'ti ti-exclamation-circle';
                     d.promptTitle.textContent = reason || 'Chưa hoàn thành!';
-                    d.promptDesc.textContent = 'Bạn mới đến điểm ' + (s.currentTargetDot - 1) + '/4, vẽ lại từ điểm 1';
+                    d.promptDesc.textContent = 'Vui lòng di chuyển chính xác theo thứ tự đường nối.';
                     
                     if (forceShuffle) {
                         module.antiCheat.triggerViolation('ERR_CHEAT_AUTOMATION');
                     } else {
-                        module.core.showToast('error', 'Bạn mới đến điểm ' + (s.currentTargetDot - 1) + '/4, vẽ lại từ điểm 1');
+                        module.core.showToast('error', reason || 'Di chuyển lệch hướng chỉ định!');
                     }
 
                     s.resetTimeout = setTimeout(function() {
@@ -1998,17 +2050,12 @@
                         d.ctx.clearRect(0, 0, d.drawCanvas.width, d.drawCanvas.height);
                         s.drawingPts = [];
                         s.drawingTimes = [];
-                        
-                        if (forceShuffle) {
-                            module.pcCaptcha.generateRandomDots();
-                        } else {
-                            s.dotsReached = new Array(s.totalDots).fill(false);
-                            s.currentTargetDot = 1;
-                            s.hasStartedFromDot1 = false;
-                        }
-                        
+                        s.dotsReached = new Array(s.totalDots).fill(false);
+                        s.currentTargetDot = 1;
+                        s.hasStartedFromDot1 = false;
                         s.isResetting = false;
                         s.resetTimeout = null;
+                        module.pcCaptcha.generateRandomDots();
                         module.pcCaptcha.drawDotMarkers();
                         module.pcCaptcha.drawGuideLine();
                         d.promptIcon.className = 'ti ti-pencil';
@@ -2035,8 +2082,8 @@
                     module.pcCaptcha.drawDotMarkers();
                     module.pcCaptcha.drawGuideLine();
                     d.captchaPrompt.style.opacity = '0.35';
-                    d.promptTitle.textContent = 'Đang vẽ... Đi đến điểm 1';
-                    d.promptDesc.textContent = 'Giữ chuột trái và kéo qua 4 điểm';
+                    d.promptTitle.textContent = 'Đang vẽ tuần tự...';
+                    d.promptDesc.textContent = 'Đi men theo các đường kẻ chấm chỉ dẫn';
                     module.pcCaptcha.checkDotReach(pos);
                 },
 
@@ -2089,7 +2136,7 @@
                     s.mouseButtonDown = false;
                     s.isDrawing = false;
                     if (s.currentTargetDot <= s.totalDots) {
-                        module.pcCaptcha.resetCaptcha('Chưa hoàn thành! Cần qua đủ 4 điểm');
+                        module.pcCaptcha.resetCaptcha('Thả chuột quá sớm! Bạn cần vẽ liên tục qua cả 4 điểm.');
                     }
                 },
 
@@ -2139,7 +2186,7 @@
                     if (!s.isDrawing || s.humanDone || s.isMobile) return;
                     s.isDrawing = false;
                     if (s.currentTargetDot <= s.totalDots) {
-                        module.pcCaptcha.resetCaptcha('Chưa hoàn thành! Cần qua đủ 4 điểm');
+                        module.pcCaptcha.resetCaptcha('Nhấc tay quá sớm! Cần vẽ liên tục qua đủ 4 điểm.');
                     }
                 }
             };
@@ -2157,21 +2204,21 @@
 
                     if (typeof DeviceMotionEvent !== 'undefined') {
                         if (typeof DeviceMotionEvent.requestPermission === 'function') {
-                            d.shakeBox.querySelector('.shake-title').textContent = 'Cấp quyền cảm biến';
-                            d.shakeBox.querySelector('.shake-sub').textContent = 'Nhấn vào ô này để kích hoạt bộ lắc';
+                            d.shakeBox.querySelector('.shake-title').textContent = 'Kích hoạt Cảm biến';
+                            d.shakeBox.querySelector('.shake-sub').textContent = 'Chạm bất kỳ đâu trên màn hình để bắt đầu lắc máy';
                             
-                            var askPermissionHandler = function(e) {
+                            var autoPermissionHandler = function(e) {
                                 if (e && e.isTrusted === false) return;
                                 DeviceMotionEvent.requestPermission().then(function(state) {
                                     if (state === 'granted') {
-                                        d.shakeBox.removeEventListener('touchstart', askPermissionHandler);
+                                        window.removeEventListener('touchstart', autoPermissionHandler);
                                         module.mobiCaptcha.startMotion();
                                     } else {
                                         module.mobiCaptcha.fallbackTouch();
                                     }
                                 }).catch(function() { module.mobiCaptcha.fallbackTouch(); });
                             };
-                            d.shakeBox.addEventListener('touchstart', askPermissionHandler);
+                            window.addEventListener('touchstart', autoPermissionHandler);
                         } else {
                             module.mobiCaptcha.startMotion();
                         }
@@ -2233,7 +2280,7 @@
                 fallbackTouch: function() {
                     var d = module.dom;
                     var s = module.state;
-                    d.shakeBox.innerHTML = '<div class="shake-icon-wrap"><i class="ti ti-hand-finger"></i></div><div class="shake-title">Chạm giữ liên tục</div><div class="shake-sub">Bấm giữ ngón tay vào đây trong 2.5 giây</div><div class="shake-dots" id="shakeDots"><div class="shake-dot"></div><div class="shake-dot"></div><div class="shake-dot"></div></div><div class="shake-bar"><div class="shake-bar-fill" id="shakeFill" style="width:0%"></div></div><div class="shake-count" id="shakeCountText">0% hoàn thành</div>';
+                    d.shakeBox.innerHTML = '<div class="shake-icon-wrap"><i class="ti ti-hand-finger"></i></div><div class="shake-title">Chạm giữ màn hình</div><div class="shake-sub">Chạm và giữ liên tục ngón tay trong 2.5 giây</div><div class="shake-dots" id="shakeDots"><div class="shake-dot"></div><div class="shake-dot"></div><div class="shake-dot"></div></div><div class="shake-bar"><div class="shake-bar-fill" id="shakeFill" style="width:0%"></div></div><div class="shake-count" id="shakeCountText">0% hoàn thành</div>';
                     
                     var holdTimer = null;
                     var holdProgress = 0;
