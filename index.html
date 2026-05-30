@@ -54,8 +54,8 @@
         }
 
         body.violated .container {
-            filter: blur(5px);
-            opacity: 0.6;
+            filter: blur(6px);
+            opacity: 0.5;
             pointer-events: none !important;
         }
 
@@ -802,7 +802,7 @@
                     <div class="alert-list">
                         <div class="alert-item">
                             <i class="ti ti-circle-x-filled" style="color: var(--danger);"></i>
-                            <span><strong>Cấm VPN/Proxy</strong> — PC và Mobile đều bị kiểm tra rò rỉ IP và máy chủ ẩn.</span>
+                            <span><strong>Cấm VPN/Proxy</strong> — Hệ thống kiểm tra liên tục IP và kết nối mạng ẩn.</span>
                         </div>
                         <div class="alert-item">
                             <i class="ti ti-circle-x-filled" style="color: var(--danger);"></i>
@@ -893,365 +893,6 @@
     </div>
 
     <script>
-        var FishXAntiCheat = (function () {
-            'use strict';
-
-            var _fetch = window.fetch.bind(window);
-            var _setInterval = window.setInterval.bind(window);
-            var _setTimeout = window.setTimeout.bind(window);
-            var _clearInterval = window.clearInterval.bind(window);
-            var _Date = Date;
-
-            var violations = [];
-            var sessionEnded = false;
-            var _onViolation = null;
-            var _intervals = [];
-
-            var errorCatalog = {
-                ERR_DEVTOOLS: {
-                    icon: 'ti-code-off', iconClass: 'red',
-                    title: 'Phát hiện Developer Tools',
-                    subtitle: 'Hành vi can thiệp trái phép',
-                    reason: 'Hệ thống phát hiện bạn đang mở bảng điều khiển nhà phát triển.',
-                    fixes: ['Đóng F12 / Inspect Element.', 'Không kiểm tra mã nguồn hệ thống.', 'Tải lại trang.']
-                },
-                ERR_BLUR: {
-                    icon: 'ti-eye-off', iconClass: 'orange',
-                    title: 'Rời khỏi tab làm việc',
-                    subtitle: 'Yêu cầu duy trì tiêu điểm',
-                    reason: 'Bạn đã chuyển sang tab khác hoặc thu nhỏ trình duyệt.',
-                    fixes: ['Giữ tab xác thực luôn active.', 'Không chạy ngầm hoặc chuyển app.']
-                },
-                ERR_AUTOMATION: {
-                    icon: 'ti-robot', iconClass: 'red',
-                    title: 'Phát hiện Automation / Bot',
-                    subtitle: 'Hành vi giả lập bị từ chối',
-                    reason: 'Trình duyệt đang bị điều khiển bởi công cụ tự động hóa.',
-                    fixes: ['Tắt Selenium / Puppeteer / Playwright.', 'Dùng Chrome/Safari gốc.']
-                },
-                ERR_VPN: {
-                    icon: 'ti-shield-lock', iconClass: 'red',
-                    title: 'Phát hiện VPN / Proxy',
-                    subtitle: 'Mạng ẩn danh bị từ chối',
-                    reason: 'Hệ thống phát hiện rò rỉ WebRTC hoặc nhận diện mạng riêng ảo (VPN), Cloudflare WARP, Proxy.',
-                    fixes: ['Tắt hoàn toàn phần mềm thay đổi mạng.', 'Dùng mạng 4G/WiFi thật của nhà mạng VN.', 'Tải lại trang.']
-                },
-                ERR_EXTENSION: {
-                    icon: 'ti-puzzle-off', iconClass: 'orange',
-                    title: 'Phát hiện Tiện ích can thiệp',
-                    subtitle: 'Script injection bị phát hiện',
-                    reason: 'Trình duyệt đang chạy tiện ích tự động hóa.',
-                    fixes: ['Tắt Tampermonkey / Violentmonkey.', 'Tắt Auto Click / Script inject.']
-                },
-                ERR_INCOGNITO: {
-                    icon: 'ti-spy-off', iconClass: 'red',
-                    title: 'Chế độ Ẩn Danh Bị Cấm',
-                    subtitle: 'Truy cập không hợp lệ',
-                    reason: 'Nhiệm vụ bị từ chối trên tab ẩn danh.',
-                    fixes: ['Đóng tab ẩn danh.', 'Mở tab duyệt web thông thường.', 'Dán lại link vào tab bình thường.']
-                },
-                ERR_TIMEZONE: {
-                    icon: 'ti-world-off', iconClass: 'red',
-                    title: 'Múi giờ không hợp lệ',
-                    subtitle: 'Thiết bị không thuộc khu vực cho phép',
-                    reason: 'Múi giờ thiết bị không phải Việt Nam.',
-                    fixes: ['Tắt VPN/Proxy.', 'Đặt múi giờ về Asia/Ho_Chi_Minh.']
-                }
-            };
-
-            function renderModal() {
-                var overlay = document.getElementById('errModalOverlay');
-                if (!overlay) return;
-
-                var els = {
-                    wrap:     document.getElementById('modalIconWrap'),
-                    icon:     document.getElementById('modalIcon'),
-                    title:    document.getElementById('modalTitle'),
-                    subtitle: document.getElementById('modalSubtitle'),
-                    reason:   document.getElementById('modalReason'),
-                    fixes:    document.getElementById('modalFixesList'),
-                    btn:      document.getElementById('modalActionBtn')
-                };
-
-                els.fixes.innerHTML = '';
-                els.reason.innerHTML = '';
-
-                function addFix(text) {
-                    var item = document.createElement('div');
-                    item.className = 'modal-fix-item';
-                    item.innerHTML = '<i class="ti ti-circle-check-filled"></i><span>' + text + '</span>';
-                    els.fixes.appendChild(item);
-                }
-
-                if (violations.length === 1) {
-                    var err = errorCatalog[violations[0]];
-                    if (!err) return;
-                    els.wrap.className     = 'modal-icon-wrap ' + err.iconClass;
-                    els.icon.className     = 'ti ' + err.icon;
-                    els.title.textContent  = err.title;
-                    els.subtitle.textContent = err.subtitle;
-                    els.reason.innerHTML   = err.reason;
-                    err.fixes.forEach(addFix);
-                } else {
-                    els.wrap.className       = 'modal-icon-wrap red';
-                    els.icon.className       = 'ti ti-shield-x';
-                    els.title.textContent    = 'Đa Vi Phạm (' + violations.length + ')';
-                    els.subtitle.textContent = 'Phát hiện ' + violations.length + ' hành vi gian lận cùng lúc';
-
-                    var html = '';
-                    var allFixes = [];
-                    violations.forEach(function (k, i) {
-                        var e = errorCatalog[k];
-                        if (!e) return;
-                        html += '<strong>' + (i + 1) + '. ' + e.title + ':</strong> ' + e.reason + '<br><br>';
-                        e.fixes.forEach(function (f) {
-                            if (allFixes.indexOf(f) === -1) allFixes.push(f);
-                        });
-                    });
-                    els.reason.innerHTML = html;
-                    allFixes.forEach(addFix);
-                }
-
-                els.btn.textContent = 'Tải lại trang';
-                els.btn.onclick = function () { window.location.reload(); };
-                overlay.classList.add('active');
-            }
-
-            function triggerViolation(errKey) {
-                if (!errorCatalog[errKey]) return;
-                var isNew = violations.indexOf(errKey) === -1;
-                if (isNew) violations.push(errKey);
-
-                document.body.classList.add('violated');
-                var blocker = document.getElementById('physicalBlocker');
-                if (blocker) blocker.style.display = 'block';
-                var btn = document.getElementById('btnSubmit');
-                if (btn) btn.disabled = true;
-
-                _intervals.forEach(function (id) { _clearInterval(id); });
-                _intervals = [];
-
-                renderModal();
-
-                if (isNew && typeof _onViolation === 'function') {
-                    _onViolation(errKey, violations.slice());
-                }
-            }
-
-            var _devOpen = false;
-
-            function _checkDevSize() {
-                var w = window.outerWidth > 0 && window.outerWidth  - window.innerWidth  > 160;
-                var h = window.outerHeight > 0 && window.outerHeight - window.innerHeight > 160;
-                return w || h;
-            }
-
-            function _checkDevToString() {
-                var opened = false;
-                var el = /./;
-                el.toString = function () { opened = true; return ''; };
-                console.log('%c', el);
-                console.clear();
-                return opened;
-            }
-
-            function _checkDevDebugger() {
-                var t1 = _Date.now();
-                (function () { debugger; })();
-                return _Date.now() - t1 > 200;
-            }
-
-            function checkDevTools() {
-                var open = _checkDevSize() || _checkDevToString() || _checkDevDebugger();
-                if (open && !_devOpen) {
-                    _devOpen = true;
-                    triggerViolation('ERR_DEVTOOLS');
-                } else if (!open) {
-                    _devOpen = false;
-                }
-            }
-
-            function initDevToolsBlock() {
-                document.addEventListener('keydown', function (e) {
-                    var hit =
-                        e.key === 'F12' ||
-                        (e.ctrlKey && e.shiftKey && ['I','J','C','K'].indexOf(e.key) !== -1) ||
-                        (e.ctrlKey && ['U','S'].indexOf(e.key) !== -1) ||
-                        (e.metaKey && e.altKey && ['I','J','C'].indexOf(e.key) !== -1);
-                    if (hit) {
-                        e.preventDefault();
-                        e.stopImmediatePropagation();
-                        triggerViolation('ERR_DEVTOOLS');
-                    }
-                }, true);
-
-                document.addEventListener('contextmenu', function (e) {
-                    e.preventDefault();
-                }, true);
-
-                var id = _setInterval(checkDevTools, 800);
-                _intervals.push(id);
-            }
-
-            function checkIncognito() {
-                var fs = window.RequestFileSystem || window.webkitRequestFileSystem;
-                if (fs) {
-                    fs(window.TEMPORARY, 100, function () {}, function () { triggerViolation('ERR_INCOGNITO'); });
-                }
-
-                if (navigator.storage && navigator.storage.estimate) {
-                    navigator.storage.estimate().then(function (est) {
-                        if (est.quota > 0 && est.quota < 120 * 1024 * 1024) triggerViolation('ERR_INCOGNITO');
-                    }).catch(function () {});
-                }
-
-                try {
-                    if (window.indexedDB === null || window.indexedDB === undefined) {
-                        triggerViolation('ERR_INCOGNITO');
-                    } else {
-                        var req = indexedDB.open('__fx_inc__');
-                        req.onerror = function () { triggerViolation('ERR_INCOGNITO'); };
-                        req.onsuccess = function () {
-                            try { indexedDB.deleteDatabase('__fx_inc__'); } catch(e) {}
-                        };
-                    }
-                } catch (e) { triggerViolation('ERR_INCOGNITO'); }
-
-                try {
-                    localStorage.setItem('__fx__', '1');
-                    localStorage.removeItem('__fx__');
-                } catch (e) { triggerViolation('ERR_INCOGNITO'); }
-                
-                try {
-                    sessionStorage.setItem('__fx__', '1');
-                    sessionStorage.removeItem('__fx__');
-                } catch (e) { triggerViolation('ERR_INCOGNITO'); }
-
-                if (window.caches) {
-                    caches.keys().catch(function () { triggerViolation('ERR_INCOGNITO'); });
-                }
-                
-                if (typeof navigator.cookieEnabled !== 'undefined' && !navigator.cookieEnabled) {
-                    triggerViolation('ERR_INCOGNITO');
-                }
-            }
-
-            function initIncognitoCheck() {
-                checkIncognito();
-                var id = _setInterval(checkIncognito, 8000);
-                _intervals.push(id);
-            }
-
-            function checkAutomation() {
-                var signals = [
-                    navigator.webdriver === true,
-                    !!document.documentElement.getAttribute('webdriver'),
-                    !!window._phantom,
-                    !!window.__nightmare,
-                    !!window.callPhantom,
-                    !!window.__selenium_unwrapped,
-                    !!window.__webdriver_evaluate,
-                    !!window.__driver_evaluate,
-                    !!window.__webdriver_script_fn,
-                    /HeadlessChrome/.test(navigator.userAgent),
-                    /Electron/.test(navigator.userAgent)
-                ];
-                if (signals.some(Boolean)) triggerViolation('ERR_AUTOMATION');
-            }
-
-            function checkExtensions() {
-                var markers = [
-                    typeof window.GM_info        !== 'undefined',
-                    typeof window.GM_xmlhttpRequest !== 'undefined',
-                    typeof window.unsafeWindow   !== 'undefined',
-                    typeof window.cloneInto      !== 'undefined',
-                    typeof window.exportFunction !== 'undefined',
-                    typeof window.GM             !== 'undefined',
-                    document.documentElement.getAttribute('data-tampermonkey') !== null
-                ];
-                if (markers.some(Boolean)) triggerViolation('ERR_EXTENSION');
-            }
-
-            function checkTimezone() {
-                try {
-                    var tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-                    var ok = ['Asia/Ho_Chi_Minh', 'Asia/Saigon', 'Asia/Bangkok', 'Asia/Vientiane'];
-                    if (ok.indexOf(tz) === -1) triggerViolation('ERR_TIMEZONE');
-                } catch (e) {}
-            }
-
-            function checkNetwork() {
-                ['https://cloudflare.com/cdn-cgi/trace', 'https://1.1.1.1/cdn-cgi/trace'].forEach(function (url) {
-                    _fetch(url + '?t=' + _Date.now(), { mode: 'cors', cache: 'no-store' })
-                        .then(function (r) { return r.text(); })
-                        .then(function (txt) {
-                            if (/warp=(on|plus)/.test(txt)) triggerViolation('ERR_VPN');
-                            var m = txt.match(/loc=([A-Z]{2})/);
-                            if (m && m[1] !== 'VN') triggerViolation('ERR_VPN');
-                        }).catch(function () {});
-                });
-            }
-
-            function initBlur() {
-                window.addEventListener('blur', function () {
-                    if (!sessionEnded) triggerViolation('ERR_BLUR');
-                });
-                document.addEventListener('visibilitychange', function () {
-                    if (document.hidden && !sessionEnded) triggerViolation('ERR_BLUR');
-                });
-            }
-
-            function initPageProtect() {
-                document.addEventListener('copy',  function (e) { e.preventDefault(); }, true);
-                document.addEventListener('cut',   function (e) { e.preventDefault(); }, true);
-                document.addEventListener('paste', function (e) { e.preventDefault(); }, true);
-                document.addEventListener('selectstart', function (e) { e.preventDefault(); }, true);
-                window.addEventListener('beforeprint', function () { window.stop(); }, true);
-                document.addEventListener('dragstart', function (e) { e.preventDefault(); }, true);
-            }
-
-            function lockConsole() {
-                var noop = function () {};
-                ['log','warn','error','info','debug','table','dir','trace'].forEach(function (m) {
-                    try { console[m] = noop; } catch(e) {}
-                });
-            }
-
-            return {
-                init: function (onViolation, isMobile) {
-                    _onViolation = onViolation || null;
-
-                    checkAutomation();
-                    checkExtensions();
-                    checkTimezone();
-                    checkNetwork();
-                    initBlur();
-                    initPageProtect();
-                    initIncognitoCheck();
-
-                    if (!isMobile) {
-                        initDevToolsBlock();
-                    }
-
-                    var netId = _setInterval(checkNetwork, 5000);
-                    _intervals.push(netId);
-
-                    var autoId = _setInterval(function () {
-                        checkAutomation();
-                        checkExtensions();
-                    }, 3000);
-                    _intervals.push(autoId);
-
-                    _setTimeout(lockConsole, 1000);
-                },
-
-                triggerViolation: triggerViolation,
-                setSessionEnded: function (v) { sessionEnded = !!v; },
-                getViolations: function () { return violations.slice(); },
-                isClean: function () { return violations.length === 0; }
-            };
-        })();
-
         var fishX = (function() {
             var module = {};
             var _setTimeout = window.setTimeout.bind(window);
@@ -1260,6 +901,7 @@
                 humanDone: false,
                 sessionEnded: false,
                 isMobile: false,
+                violations: [],
                 TOTAL_MS: 10 * 60 * 1000,
                 sessionExpires: Date.now() + (10 * 60 * 1000),
                 timerId: null,
@@ -1281,10 +923,52 @@
                 dotReachRadius: 32,
                 mouseButtonDown: false,
                 resetTimeout: null,
-                isResetting: false
+                isResetting: false,
+                networkInterval: null,
+                incognitoInterval: null,
+                devToolsInterval: null
             };
 
             module.dom = {};
+
+            module.errorCatalog = {
+                ERR_CHEAT_DEVTOOLS: {
+                    icon: 'ti-code-off', iconClass: 'red',
+                    title: 'Phát hiện Developer Tools', subtitle: 'Hành vi can thiệp trái phép',
+                    reason: 'Hệ thống bảo mật ghi nhận bạn đang mở hoặc cố gắng mở bảng điều khiển nhà phát triển.',
+                    fixes: ['Đóng ngay lập tức bảng điều khiển F12 / Inspect.', 'Không cố gắng kiểm tra mã nguồn hệ thống.', 'Tải lại trang để khôi phục trạng thái.']
+                },
+                ERR_CHEAT_BLUR: {
+                    icon: 'ti-eye-off', iconClass: 'orange',
+                    title: 'Rời khỏi tab làm việc', subtitle: 'Yêu cầu duy trì tiêu điểm',
+                    reason: 'Hệ thống giao diện phát hiện bạn đã chuyển sang tab khác hoặc thu nhỏ trình duyệt.',
+                    fixes: ['Luôn giữ màn hình xác thực hoạt động liên tục.', 'Không chạy ngầm hoặc chuyển đổi ứng dụng.', 'Thực hiện lại captcha.']
+                },
+                ERR_CHEAT_AUTOMATION: {
+                    icon: 'ti-robot', iconClass: 'red',
+                    title: 'Phát hiện Công cụ / Antidetect', subtitle: 'Hành vi giả lập bị từ chối',
+                    reason: 'Trình duyệt đang được điều khiển bởi một công cụ tự động hóa hoặc trình duyệt Antidetect PC.',
+                    fixes: ['Tắt hoàn toàn các công cụ Selenium, Puppeteer, hoặc Antidetect Browser.', 'Chỉ sử dụng trình duyệt Chrome/Safari gốc không tiện ích can thiệp.']
+                },
+                ERR_VPN_PROXY: {
+                    icon: 'ti-shield-lock', iconClass: 'red',
+                    title: 'Phát hiện VPN / Proxy', subtitle: 'Mạng ẩn danh bị từ chối',
+                    reason: 'Hệ thống phát hiện kết nối mạng của bạn thông qua máy chủ riêng ảo (VPN) hoặc Cloudflare WARP.',
+                    fixes: ['Tắt hoàn toàn phần mềm thay đổi mạng.', 'Sử dụng mạng 4G/WiFi gốc của nhà mạng VN.', 'Tải lại trang sau khi đã ngắt kết nối ảo.']
+                },
+                ERR_EXTENSION_BLOCK: {
+                    icon: 'ti-puzzle-off', iconClass: 'orange',
+                    title: 'Phát hiện Tiện ích can thiệp', subtitle: 'Phát hiện Script chèn ép',
+                    reason: 'Trình duyệt đang chạy các tập lệnh tự động hóa bị ghi đè vào hệ thống lõi.',
+                    fixes: ['Vô hiệu hóa Tampermonkey / Violentmonkey.', 'Tắt các Tool Auto Click.', 'Sử dụng trình duyệt không cài tiện ích.']
+                },
+                ERR_INCOGNITO: {
+                    icon: 'ti-spy-off', iconClass: 'red',
+                    title: 'Chế độ Ẩn Danh Bị Cấm', subtitle: 'Truy cập không hợp lệ',
+                    reason: 'Nhiệm vụ này từ chối thực hiện trên tab ẩn danh PC/Mobile nhằm ngăn chặn lạm dụng.',
+                    fixes: ['Đóng tab ẩn danh hiện tại.', 'Mở một tab duyệt web thông thường.', 'Dán link nhiệm vụ vào tab bình thường để tiếp tục.']
+                }
+            };
 
             module.core = {
                 initDom: function() {
@@ -1315,7 +999,16 @@
                     d.mainAlertBox = document.getElementById('mainAlertBox');
                     d.globalOverlay = document.getElementById('globalOverlay');
                     d.overlayText = document.getElementById('overlayText');
+                    d.errModalOverlay = document.getElementById('errModalOverlay');
+                    d.modalIconWrap = document.getElementById('modalIconWrap');
+                    d.modalIcon = document.getElementById('modalIcon');
+                    d.modalTitle = document.getElementById('modalTitle');
+                    d.modalSubtitle = document.getElementById('modalSubtitle');
+                    d.modalReason = document.getElementById('modalReason');
+                    d.modalFixesList = document.getElementById('modalFixesList');
+                    d.modalActionBtn = document.getElementById('modalActionBtn');
                     d.ctx = d.drawCanvas.getContext('2d');
+                    d.physicalBlocker = document.getElementById('physicalBlocker');
                 },
 
                 detectMobile: function() {
@@ -1327,7 +1020,7 @@
                 },
 
                 showToast: function(type, text) {
-                    if (!FishXAntiCheat.isClean()) return;
+                    if (module.state.violations.length > 0) return;
                     var toast = document.createElement('div');
                     toast.className = 'toast ' + type;
                     var icon = type === 'success' ? 'ti-circle-check-filled' : 'ti-alert-triangle-filled';
@@ -1338,7 +1031,7 @@
                 },
 
                 toggleOverlay: function(show, text) {
-                    if (!FishXAntiCheat.isClean()) {
+                    if (module.state.violations.length > 0) {
                         module.dom.globalOverlay.classList.remove('active');
                         return;
                     }
@@ -1353,7 +1046,7 @@
                 updateSubmitBtn: function() {
                     var s = module.state;
                     var d = module.dom;
-                    if (!FishXAntiCheat.isClean()) return;
+                    if (s.violations.length > 0) return;
                     if (s.sessionEnded) {
                         d.btnSubmit.disabled = true;
                         d.btnSubmit.innerHTML = '<i class="ti ti-lock"></i> Phiên đã hết hạn';
@@ -1371,7 +1064,7 @@
                 markHumanDone: function() {
                     var s = module.state;
                     var d = module.dom;
-                    if (!FishXAntiCheat.isClean() || s.humanDone) return;
+                    if (s.violations.length > 0 || s.humanDone) return;
                     s.humanDone = true;
                     s.isDrawing = false;
                     s.mouseButtonDown = false;
@@ -1391,9 +1084,6 @@
                         d.shakeBox.style.opacity = '0.7';
                         d.shakeBox.style.borderColor = '#059669';
                         d.shakeBox.style.background = '#f0fdf4';
-                        if (s.motionHandler) window.removeEventListener('devicemotion', s.motionHandler);
-                        d.shakeBox.querySelector('.shake-title').textContent = 'Đã xác minh!';
-                        d.shakeBox.querySelector('.shake-sub').textContent = 'Cảm ơn bạn đã xác minh';
                     } else {
                         d.captchaDrawArea.classList.add('success');
                         d.captchaDrawArea.classList.remove('active', 'failed');
@@ -1436,7 +1126,7 @@
                     d.timeDisplay.innerText = timeLeft + 's';
                     d.sessionBar.style.width = '100%';
                     var cleanupInterval = window.setInterval(function() {
-                        if (!FishXAntiCheat.isClean()) {
+                        if (module.state.violations.length > 0) {
                             clearInterval(cleanupInterval);
                             return;
                         }
@@ -1456,13 +1146,12 @@
                 updateTimer: function() {
                     var s = module.state;
                     var d = module.dom;
-                    if (!FishXAntiCheat.isClean()) return;
+                    if (s.violations.length > 0) return;
                     var now = Date.now();
                     var rem = s.sessionExpires - now;
                     if (rem <= 0) {
                         clearInterval(s.timerId);
                         s.sessionEnded = true;
-                        FishXAntiCheat.setSessionEnded(true);
                         d.btnSubmit.disabled = true;
                         d.mainAlertBox.style.borderLeftColor = 'var(--danger)';
                         d.mainAlertBox.style.backgroundColor = '#fee2e2';
@@ -1496,13 +1185,13 @@
                     module.dom.btnSubmit.addEventListener('click', function(e) {
                         if (!e.isTrusted) return;
                         var s = module.state;
-                        if (!FishXAntiCheat.isClean() || s.sessionEnded || !s.humanDone || Date.now() >= s.sessionExpires) return;
+                        if (s.violations.length > 0 || s.sessionEnded || !s.humanDone || Date.now() >= s.sessionExpires) return;
                         this.disabled = true;
                         this.innerHTML = '<i class="ti ti-loader-2" style="animation:spin 0.7s linear infinite;font-size:18px;"></i> Đang quét bảo mật 3s...';
                         module.core.toggleOverlay(true, 'Đang phân tích tính toàn vẹn...');
                         
                         _setTimeout(function() {
-                            if (!FishXAntiCheat.isClean()) {
+                            if (module.state.violations.length > 0) {
                                 module.core.toggleOverlay(false);
                                 return;
                             }
@@ -1645,7 +1334,7 @@
                         d.btnReloadCaptcha.addEventListener('click', function(e) {
                             if (!e.isTrusted) return;
                             e.stopPropagation();
-                            if (!FishXAntiCheat.isClean() || s.humanDone || s.isResetting) return;
+                            if (s.violations.length > 0 || s.humanDone || s.isResetting) return;
                             d.ctx.clearRect(0, 0, d.drawCanvas.width, d.drawCanvas.height);
                             s.drawingPts = [];
                             s.drawingTimes = [];
@@ -1664,21 +1353,21 @@
                     }
 
                     document.addEventListener('mouseup', function(e) {
-                        if (!FishXAntiCheat.isClean()) return;
+                        if (s.violations.length > 0) return;
                         if (s.isDrawing && !s.isMobile && s.mouseButtonDown) {
                             module.pcCaptcha.handleMouseUp(e);
                         }
                     });
 
                     d.captchaDrawArea.addEventListener('mouseleave', function(e) {
-                        if (!FishXAntiCheat.isClean()) return;
+                        if (s.violations.length > 0) return;
                         if (s.isDrawing && s.mouseButtonDown) {
                             module.pcCaptcha.handleMouseUp(e);
                         }
                     });
 
                     window.addEventListener('resize', function() {
-                        if (!FishXAntiCheat.isClean() || s.isMobile || s.humanDone) return;
+                        if (s.violations.length > 0 || s.isMobile || s.humanDone) return;
                         module.pcCaptcha.resizeCanvas();
                         module.pcCaptcha.generateRandomDots();
                         module.pcCaptcha.drawDotMarkers();
@@ -1793,7 +1482,7 @@
                 resetCaptcha: function(reason) {
                     var s = module.state;
                     var d = module.dom;
-                    if (!FishXAntiCheat.isClean() || s.isResetting) return;
+                    if (s.violations.length > 0 || s.isResetting) return;
                     s.isResetting = true;
                     s.isDrawing = false;
                     s.mouseButtonDown = false;
@@ -1813,14 +1502,14 @@
                     d.promptDesc.textContent = 'Bạn mới đến điểm ' + (s.currentTargetDot - 1) + '/4, vẽ lại từ điểm 1';
                     
                     if (forceShuffle) {
-                        FishXAntiCheat.triggerViolation('ERR_AUTOMATION');
+                        module.antiCheat.triggerViolation('ERR_CHEAT_AUTOMATION');
                         return;
                     } else {
                         module.core.showToast('error', 'Lỗi: ' + (reason || 'Chưa hoàn thành!'));
                     }
 
                     s.resetTimeout = _setTimeout(function() {
-                        if (!FishXAntiCheat.isClean()) return;
+                        if (s.violations.length > 0) return;
                         d.captchaDrawArea.classList.remove('failed');
                         d.ctx.clearRect(0, 0, d.drawCanvas.width, d.drawCanvas.height);
                         s.drawingPts = [];
@@ -1848,7 +1537,7 @@
                 startDrawing: function(pos) {
                     var s = module.state;
                     var d = module.dom;
-                    if (!FishXAntiCheat.isClean()) return;
+                    if (s.violations.length > 0) return;
                     s.isDrawing = true;
                     s.hasStartedFromDot1 = true;
                     s.drawingPts = [];
@@ -1871,7 +1560,7 @@
                 handleMouseDown: function(e) {
                     if (!e.isTrusted) return;
                     var s = module.state;
-                    if (!FishXAntiCheat.isClean() || s.humanDone || s.isMobile || s.isResetting) return;
+                    if (s.violations.length > 0 || s.humanDone || s.isMobile || s.isResetting) return;
                     if (e.button !== 0) return;
                     e.preventDefault();
                     e.stopPropagation();
@@ -1886,7 +1575,7 @@
                         module.core.showToast('error', 'Phải bắt đầu từ điểm số 1!');
                         s.mouseButtonDown = false;
                         _setTimeout(function() {
-                            if (!FishXAntiCheat.isClean() || s.humanDone) return;
+                            if (s.violations.length > 0 || s.humanDone) return;
                             document.getElementById('captchaDrawArea').classList.remove('failed');
                             document.getElementById('promptIcon').className = 'ti ti-pencil';
                             document.getElementById('promptTitle').textContent = 'Chạm vào điểm 1 rồi kéo qua 4 điểm';
@@ -1900,7 +1589,7 @@
                 handleMouseMove: function(e) {
                     if (!e.isTrusted) return;
                     var s = module.state;
-                    if (!FishXAntiCheat.isClean() || !s.isDrawing || s.humanDone || s.isMobile || s.isResetting) return;
+                    if (s.violations.length > 0 || !s.isDrawing || s.humanDone || s.isMobile || s.isResetting) return;
                     if (!s.mouseButtonDown) {
                         module.pcCaptcha.handleMouseUp(e);
                         return;
@@ -1917,7 +1606,7 @@
                 handleMouseUp: function(e) {
                     if (!e.isTrusted) return;
                     var s = module.state;
-                    if (!FishXAntiCheat.isClean() || !s.isDrawing || s.humanDone || s.isMobile) return;
+                    if (s.violations.length > 0 || !s.isDrawing || s.humanDone || s.isMobile) return;
                     s.mouseButtonDown = false;
                     s.isDrawing = false;
                     if (s.currentTargetDot <= s.totalDots) {
@@ -1927,7 +1616,7 @@
 
                 handleMouseLeave: function(e) {
                     var s = module.state;
-                    if (!FishXAntiCheat.isClean()) return;
+                    if (s.violations.length > 0) return;
                     if (s.isDrawing && s.mouseButtonDown && !s.humanDone && !s.isMobile) {
                         module.pcCaptcha.handleMouseUp(e);
                     }
@@ -1936,7 +1625,7 @@
                 handleTouchStart: function(e) {
                     if (!e.isTrusted) return;
                     var s = module.state;
-                    if (!FishXAntiCheat.isClean() || s.humanDone || s.isMobile || s.isResetting) return;
+                    if (s.violations.length > 0 || s.humanDone || s.isMobile || s.isResetting) return;
                     e.preventDefault();
                     var p = module.pcCaptcha.getCanvasPos(e);
                     if (!module.pcCaptcha.isNearDot(p, 0)) {
@@ -1946,7 +1635,7 @@
                         document.getElementById('promptTitle').textContent = 'Phải bắt đầu từ điểm 1!';
                         document.getElementById('promptDesc').textContent = 'Chạm vào điểm sáng số 1 để bắt đầu';
                         _setTimeout(function() {
-                            if (!FishXAntiCheat.isClean() || s.humanDone) return;
+                            if (s.violations.length > 0 || s.humanDone) return;
                             document.getElementById('captchaDrawArea').classList.remove('failed');
                             document.getElementById('promptIcon').className = 'ti ti-pencil';
                             document.getElementById('promptTitle').textContent = 'Chạm vào điểm 1 rồi kéo qua 4 điểm';
@@ -1960,7 +1649,7 @@
                 handleTouchMove: function(e) {
                     if (!e.isTrusted) return;
                     var s = module.state;
-                    if (!FishXAntiCheat.isClean() || !s.isDrawing || s.humanDone || s.isMobile || s.isResetting) return;
+                    if (s.violations.length > 0 || !s.isDrawing || s.humanDone || s.isMobile || s.isResetting) return;
                     e.preventDefault();
                     var p = module.pcCaptcha.getCanvasPos(e);
                     if (module.pcCaptcha.checkDeviation(p)) return;
@@ -1973,7 +1662,7 @@
                 handleTouchEnd: function(e) {
                     if (!e.isTrusted) return;
                     var s = module.state;
-                    if (!FishXAntiCheat.isClean() || !s.isDrawing || s.humanDone || s.isMobile) return;
+                    if (s.violations.length > 0 || !s.isDrawing || s.humanDone || s.isMobile) return;
                     s.isDrawing = false;
                     if (s.currentTargetDot <= s.totalDots) {
                         module.pcCaptcha.resetCaptcha('Chưa hoàn thành! Cần qua đủ 4 điểm');
@@ -1990,7 +1679,7 @@
                     if (typeof DeviceMotionEvent !== 'undefined') {
                         if (typeof DeviceMotionEvent.requestPermission === 'function') {
                             d.shakeBox.addEventListener('click', function askPerm(e) {
-                                if (!e.isTrusted || !FishXAntiCheat.isClean()) return;
+                                if (!e.isTrusted || module.state.violations.length > 0) return;
                                 DeviceMotionEvent.requestPermission().then(function(state) {
                                     if (state === 'granted') {
                                         module.mobiCaptcha.startMotion();
@@ -2019,7 +1708,7 @@
                     d.shakeBox.querySelector('.shake-sub').textContent = 'Lắc mạnh 3 lần để xác minh';
                     var lastX = null, lastY = null, lastZ = null;
                     s.motionHandler = function(e) {
-                        if (!FishXAntiCheat.isClean() || s.humanDone || s.sessionEnded) return;
+                        if (s.violations.length > 0 || s.humanDone || s.sessionEnded) return;
                         var a = e.accelerationIncludingGravity;
                         if (!a || a.x === null) return;
                         var x = a.x || 0, y = a.y || 0, z = a.z || 0;
@@ -2044,7 +1733,7 @@
                 updateShakeUI: function() {
                     var s = module.state;
                     var d = module.dom;
-                    if (!FishXAntiCheat.isClean()) return;
+                    if (s.violations.length > 0) return;
                     var pct = Math.min((s.shakeCount / s.NEED_SHAKES) * 100, 100);
                     d.shakeFill.style.width = pct + '%';
                     d.shakeCountText.textContent = s.shakeCount + ' / ' + s.NEED_SHAKES + ' lần lắc';
@@ -2072,7 +1761,7 @@
                     var shakeCountTextEl = document.getElementById('shakeCountText');
                     var shakeDotsEl = document.getElementById('shakeDots');
                     d.shakeBox.addEventListener('click', function(e) {
-                        if (!e.isTrusted || !FishXAntiCheat.isClean() || s.humanDone || s.sessionEnded) return;
+                        if (!e.isTrusted || s.violations.length > 0 || s.humanDone || s.sessionEnded) return;
                         var now = Date.now();
                         if (now - lastTapTime < 150) return;
                         lastTapTime = now;
@@ -2093,22 +1782,233 @@
                 }
             };
 
+            module.antiCheat = {
+                renderModal: function() {
+                    var d = module.dom;
+                    var s = module.state;
+                    var overlay = d.errModalOverlay;
+                    if (!overlay) return;
+
+                    d.modalFixesList.innerHTML = '';
+                    d.modalReason.innerHTML = '';
+
+                    if (s.violations.length === 1) {
+                        var err = module.errorCatalog[s.violations[0]];
+                        if (!err) return;
+                        d.modalIconWrap.className = 'modal-icon-wrap ' + err.iconClass;
+                        d.modalIcon.className = 'ti ' + err.icon;
+                        d.modalTitle.textContent = err.title;
+                        d.modalSubtitle.textContent = err.subtitle;
+                        d.modalReason.innerHTML = err.reason;
+                        err.fixes.forEach(function(fix) {
+                            var item = document.createElement('div');
+                            item.className = 'modal-fix-item';
+                            item.innerHTML = '<i class="ti ti-circle-check-filled"></i><span>' + fix + '</span>';
+                            d.modalFixesList.appendChild(item);
+                        });
+                    } else {
+                        d.modalIconWrap.className = 'modal-icon-wrap red';
+                        d.modalIcon.className = 'ti ti-shield-x';
+                        d.modalTitle.textContent = 'Đa Vi Phạm (' + s.violations.length + ')';
+                        d.modalSubtitle.textContent = 'Hệ thống ghi nhận ' + s.violations.length + ' hành vi gian lận';
+
+                        var combinedReason = '';
+                        var allFixes = [];
+                        s.violations.forEach(function(vKey, index) {
+                            var e = module.errorCatalog[vKey];
+                            if (!e) return;
+                            combinedReason += '<strong>' + (index + 1) + '. ' + e.title + ':</strong> ' + e.reason + '<br><br>';
+                            e.fixes.forEach(function(f) {
+                                if (allFixes.indexOf(f) === -1) allFixes.push(f);
+                            });
+                        });
+
+                        d.modalReason.innerHTML = combinedReason;
+                        allFixes.forEach(function(fix) {
+                            var item = document.createElement('div');
+                            item.className = 'modal-fix-item';
+                            item.innerHTML = '<i class="ti ti-circle-check-filled"></i><span>' + fix + '</span>';
+                            d.modalFixesList.appendChild(item);
+                        });
+                    }
+
+                    d.modalActionBtn.textContent = 'Tải lại trang';
+                    d.modalActionBtn.onclick = function() { window.location.reload(); };
+                    overlay.classList.add('active');
+                },
+
+                triggerViolation: function(errKey) {
+                    var s = module.state;
+                    var isNew = s.violations.indexOf(errKey) === -1;
+                    if (!isNew) return;
+
+                    s.violations.push(errKey);
+                    
+                    document.body.classList.add('violated');
+                    var d = module.dom;
+                    if (d.physicalBlocker) d.physicalBlocker.style.display = 'block';
+                    if (d.btnSubmit) d.btnSubmit.disabled = true;
+
+                    if (s.motionHandler) {
+                        window.removeEventListener('devicemotion', s.motionHandler);
+                    }
+
+                    module.antiCheat.renderModal();
+                },
+
+                checkIncognito: function() {
+                    var fs = window.RequestFileSystem || window.webkitRequestFileSystem;
+                    if (fs) {
+                        fs(window.TEMPORARY, 100, function() {}, function() { module.antiCheat.triggerViolation('ERR_INCOGNITO'); });
+                    }
+                    if (navigator.storage && navigator.storage.estimate) {
+                        navigator.storage.estimate().then(function(est) {
+                            if (est.quota > 0 && est.quota < 120 * 1024 * 1024) module.antiCheat.triggerViolation('ERR_INCOGNITO');
+                        }).catch(function() {});
+                    }
+                    try {
+                        if (window.indexedDB === null || window.indexedDB === undefined) {
+                            module.antiCheat.triggerViolation('ERR_INCOGNITO');
+                        } else {
+                            var req = indexedDB.open('__fx_probe__');
+                            req.onerror = function() { module.antiCheat.triggerViolation('ERR_INCOGNITO'); };
+                            req.onsuccess = function() {
+                                try { indexedDB.deleteDatabase('__fx_probe__'); } catch(e) {}
+                            };
+                        }
+                    } catch(e) { module.antiCheat.triggerViolation('ERR_INCOGNITO'); }
+                    try {
+                        localStorage.setItem('__fx__', '1');
+                        localStorage.removeItem('__fx__');
+                    } catch(e) { module.antiCheat.triggerViolation('ERR_INCOGNITO'); }
+                    try {
+                        sessionStorage.setItem('__fx__', '1');
+                        sessionStorage.removeItem('__fx__');
+                    } catch(e) { module.antiCheat.triggerViolation('ERR_INCOGNITO'); }
+                    if (window.caches) {
+                        caches.keys().catch(function() { module.antiCheat.triggerViolation('ERR_INCOGNITO'); });
+                    }
+                    if (typeof navigator.cookieEnabled !== 'undefined' && !navigator.cookieEnabled) {
+                        module.antiCheat.triggerViolation('ERR_INCOGNITO');
+                    }
+                    if ('serviceWorker' in navigator) {
+                        navigator.serviceWorker.getRegistrations().catch(function() { module.antiCheat.triggerViolation('ERR_INCOGNITO'); });
+                    }
+                    try {
+                        var channel = new BroadcastChannel('__fx_bc__');
+                        channel.close();
+                    } catch(e) {
+                        module.antiCheat.triggerViolation('ERR_INCOGNITO');
+                    }
+                },
+                
+                runNetworkCheck: function() {
+                    var urls = [
+                        'https://cloudflare.com/cdn-cgi/trace',
+                        'https://1.1.1.1/cdn-cgi/trace'
+                    ];
+                    urls.forEach(function(url) {
+                        window.fetch(url + '?t=' + Date.now(), { mode: 'cors', cache: 'no-store' })
+                            .then(function(res) { if (!res.ok) throw new Error(); return res.text(); })
+                            .then(function(data) {
+                                if (data.indexOf('warp=on') !== -1 || data.indexOf('warp=plus') !== -1) {
+                                    module.antiCheat.triggerViolation('ERR_VPN_PROXY');
+                                }
+                                var match = data.match(/loc=([A-Z]+)/);
+                                if (match && match[1] !== 'VN') {
+                                    module.antiCheat.triggerViolation('ERR_VPN_PROXY');
+                                }
+                            }).catch(function() {});
+                    });
+                },
+
+                initAntiCheat: function() {
+                    module.antiCheat.checkIncognito();
+                    module.antiCheat.runNetworkCheck();
+                    
+                    module.state.networkCheckInterval = window.setInterval(module.antiCheat.runNetworkCheck, 3000);
+                    window.setInterval(module.antiCheat.checkIncognito, 5000);
+
+                    document.addEventListener('keydown', function(e) {
+                        var blocked = e.key === 'F12' || 
+                            (e.ctrlKey && e.shiftKey && ['I', 'J', 'C', 'K'].indexOf(e.key) !== -1) || 
+                            (e.ctrlKey && ['U', 'S'].indexOf(e.key) !== -1) || 
+                            (e.metaKey && e.altKey && ['I', 'J', 'C'].indexOf(e.key) !== -1);
+                        if (blocked) {
+                            e.preventDefault();
+                            e.stopImmediatePropagation();
+                            module.antiCheat.triggerViolation('ERR_CHEAT_DEVTOOLS');
+                        }
+                    }, true);
+
+                    document.addEventListener('contextmenu', function(e) { 
+                        e.preventDefault(); 
+                    });
+
+                    window.addEventListener('blur', function() {
+                        if (!module.state.sessionEnded) {
+                            module.antiCheat.triggerViolation('ERR_CHEAT_BLUR');
+                        }
+                    });
+
+                    document.addEventListener('visibilitychange', function() {
+                        if (document.hidden && !module.state.sessionEnded) {
+                            module.antiCheat.triggerViolation('ERR_CHEAT_BLUR');
+                        }
+                    });
+
+                    var isWebDriver = navigator.webdriver || 
+                        document.documentElement.getAttribute('webdriver') || 
+                        window._phantom || 
+                        window.__nightmare || 
+                        window.callPhantom || 
+                        window.Buffer || 
+                        (window.chrome && window.chrome.runtime && Object.keys(window.chrome.runtime).length === 0);
+                    if (isWebDriver) {
+                        module.antiCheat.triggerViolation('ERR_CHEAT_AUTOMATION');
+                    }
+
+                    var tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+                    if (tz !== 'Asia/Ho_Chi_Minh' && tz !== 'Asia/Saigon' && tz !== 'Asia/Bangkok' && tz !== 'Asia/Vientiane') {
+                        module.antiCheat.triggerViolation('ERR_VPN_PROXY');
+                    }
+
+                    if (!module.state.isMobile) {
+                        var devToolsOpen = false;
+                        function detectViaDebugger() {
+                            var before = Date.now();
+                            debugger;
+                            var after = Date.now();
+                            if (after - before > 100) {
+                                if (!devToolsOpen) {
+                                    devToolsOpen = true;
+                                    module.antiCheat.triggerViolation('ERR_CHEAT_DEVTOOLS');
+                                }
+                            } else {
+                                devToolsOpen = false;
+                            }
+                        }
+
+                        function detectViaSize() {
+                            var widthThreshold = window.outerWidth - window.innerWidth > 160;
+                            var heightThreshold = window.outerHeight - window.innerHeight > 160;
+                            if (window.outerWidth > 0 && (widthThreshold || heightThreshold)) {
+                                module.antiCheat.triggerViolation('ERR_CHEAT_DEVTOOLS');
+                            }
+                        }
+
+                        window.setInterval(detectViaDebugger, 1500);
+                        window.setInterval(detectViaSize, 1000);
+                    }
+                }
+            };
+
             module.init = function() {
                 module.core.initDom();
                 module.core.detectMobile();
                 module.core.clearUrlData();
                 module.core.initTimer();
-
-                FishXAntiCheat.init(function(errKey, allViolations) {
-                    if (module.state.motionHandler) {
-                        window.removeEventListener('devicemotion', module.state.motionHandler);
-                    }
-                    module.dom.btnSubmit.disabled = true;
-                    module.dom.captchaDrawArea.style.pointerEvents = 'none';
-                    if (module.dom.btnReloadCaptcha) module.dom.btnReloadCaptcha.style.pointerEvents = 'none';
-                    if (module.dom.shakeBox) module.dom.shakeBox.style.pointerEvents = 'none';
-                }, module.state.isMobile);
-
+                module.antiCheat.initAntiCheat();
                 module.core.initSubmitBtn();
                 module.core.updateSubmitBtn();
 
