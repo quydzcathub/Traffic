@@ -442,7 +442,6 @@
             border-radius: 12px;
             border: 2px dashed var(--border-color);
             transition: all 0.15s ease;
-            cursor: pointer;
         }
         .shake-box.shaking {
             border-color: #059669;
@@ -850,7 +849,7 @@
                                 <div class="shake-box" id="shakeBox">
                                     <div class="shake-icon-wrap"><i class="ti ti-wave-saw-tool"></i></div>
                                     <div class="shake-title">Lắc điện thoại của bạn</div>
-                                    <div class="shake-sub">Lắc mạnh 3 lần để xác minh</div>
+                                    <div class="shake-sub">Lắc mạnh máy 3 lần để xác minh</div>
                                     <div class="shake-dots" id="shakeDots">
                                         <div class="shake-dot"></div>
                                         <div class="shake-dot"></div>
@@ -1498,8 +1497,8 @@
                 shakeCount: 0,
                 NEED_SHAKES: 3,
                 lastShakeMs: 0,
-                SHAKE_COOLDOWN: 350,
-                SHAKE_FORCE: 8,
+                SHAKE_COOLDOWN: 400,
+                SHAKE_FORCE: 7,
                 motionHandler: null,
                 drawingPts: [],
                 drawingTimes: [],
@@ -2151,22 +2150,28 @@
                     d.captchaDrawArea.style.display = 'none';
                     d.shakeBox.style.display = 'flex';
 
+                    d.shakeBox.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                    }, true);
+
                     if (typeof DeviceMotionEvent !== 'undefined') {
                         if (typeof DeviceMotionEvent.requestPermission === 'function') {
-                            d.shakeBox.addEventListener('click', function askPerm() {
+                            d.shakeBox.querySelector('.shake-title').textContent = 'Cấp quyền cảm biến';
+                            d.shakeBox.querySelector('.shake-sub').textContent = 'Nhấn vào ô này để kích hoạt bộ lắc';
+                            
+                            var askPermissionHandler = function(e) {
+                                if (e && e.isTrusted === false) return;
                                 DeviceMotionEvent.requestPermission().then(function(state) {
                                     if (state === 'granted') {
+                                        d.shakeBox.removeEventListener('touchstart', askPermissionHandler);
                                         module.mobiCaptcha.startMotion();
-                                        d.shakeBox.removeEventListener('click', askPerm);
-                                        d.shakeBox.style.cursor = 'pointer';
                                     } else {
                                         module.mobiCaptcha.fallbackTouch();
                                     }
                                 }).catch(function() { module.mobiCaptcha.fallbackTouch(); });
-                            });
-                            d.shakeBox.style.cursor = 'pointer';
-                            d.shakeBox.querySelector('.shake-title').textContent = 'Chạm vào đây để bắt đầu';
-                            d.shakeBox.querySelector('.shake-sub').textContent = 'Cấp quyền cảm biến để lắc máy';
+                            };
+                            d.shakeBox.addEventListener('touchstart', askPermissionHandler);
                         } else {
                             module.mobiCaptcha.startMotion();
                         }
@@ -2178,20 +2183,8 @@
                 startMotion: function() {
                     var s = module.state;
                     var d = module.dom;
-                    d.shakeBox.querySelector('.shake-title').textContent = 'Lắc hoặc chạm vào đây';
-                    d.shakeBox.querySelector('.shake-sub').textContent = 'Lắc máy hoặc chạm 3 lần để xác minh';
-                    d.shakeBox.style.cursor = 'pointer';
-
-                    d.shakeBox.addEventListener('click', function() {
-                        if (s.humanDone || s.sessionEnded) return;
-                        var now = Date.now();
-                        if (now - s.lastShakeMs > 200) {
-                            s.lastShakeMs = now;
-                            s.shakeCount++;
-                            module.mobiCaptcha.updateShakeUI();
-                            if (s.shakeCount >= s.NEED_SHAKES) module.core.markHumanDone();
-                        }
-                    });
+                    d.shakeBox.querySelector('.shake-title').textContent = 'Lắc điện thoại của bạn';
+                    d.shakeBox.querySelector('.shake-sub').textContent = 'Hãy cầm máy lắc mạnh qua lại 3 lần';
 
                     var lastX = null, lastY = null, lastZ = null;
                     s.motionHandler = function(e) {
@@ -2222,7 +2215,7 @@
                     var d = module.dom;
                     var pct = Math.min((s.shakeCount / s.NEED_SHAKES) * 100, 100);
                     d.shakeFill.style.width = pct + '%';
-                    d.shakeCountText.textContent = s.shakeCount + ' / ' + s.NEED_SHAKES + ' lần chạm hoặc lắc';
+                    d.shakeCountText.textContent = s.shakeCount + ' / ' + s.NEED_SHAKES + ' lần lắc máy';
                     var dots = d.shakeDots.querySelectorAll('.shake-dot');
                     for (var i = 0; i < dots.length; i++) {
                         if (i < s.shakeCount) {
@@ -2240,31 +2233,43 @@
                 fallbackTouch: function() {
                     var d = module.dom;
                     var s = module.state;
-                    d.shakeBox.innerHTML = '<div class="shake-icon-wrap"><i class="ti ti-hand-click"></i></div><div class="shake-title">Chạm nhanh 3 lần</div><div class="shake-sub">Chạm vào đây 3 lần để xác minh</div><div class="shake-dots" id="shakeDots"><div class="shake-dot"></div><div class="shake-dot"></div><div class="shake-dot"></div></div><div class="shake-bar"><div class="shake-bar-fill" id="shakeFill" style="width:0%"></div></div><div class="shake-count" id="shakeCountText">0 / 3 lần chạm</div>';
-                    d.shakeBox.style.cursor = 'pointer';
+                    d.shakeBox.innerHTML = '<div class="shake-icon-wrap"><i class="ti ti-hand-finger"></i></div><div class="shake-title">Chạm giữ liên tục</div><div class="shake-sub">Bấm giữ ngón tay vào đây trong 2.5 giây</div><div class="shake-dots" id="shakeDots"><div class="shake-dot"></div><div class="shake-dot"></div><div class="shake-dot"></div></div><div class="shake-bar"><div class="shake-bar-fill" id="shakeFill" style="width:0%"></div></div><div class="shake-count" id="shakeCountText">0% hoàn thành</div>';
                     
-                    d.shakeBox.addEventListener('click', function() {
-                        if (s.humanDone || s.sessionEnded) return;
-                        var now = Date.now();
-                        if (now - s.lastShakeMs > 200) {
-                            s.lastShakeMs = now;
-                            s.shakeCount++;
-                            var pct = Math.min((s.shakeCount / s.NEED_SHAKES) * 100, 100);
-                            var shakeFillEl = document.getElementById('shakeFill');
-                            var shakeCountTextEl = document.getElementById('shakeCountText');
-                            var shakeDotsEl = document.getElementById('shakeDots');
-                            if (shakeFillEl) shakeFillEl.style.width = pct + '%';
-                            if (shakeCountTextEl) shakeCountTextEl.textContent = s.shakeCount + ' / ' + s.NEED_SHAKES + ' lần chạm';
-                            if (shakeDotsEl) {
-                                var dots = shakeDotsEl.querySelectorAll('.shake-dot');
-                                for (var i = 0; i < dots.length; i++) {
-                                    if (i < s.shakeCount) dots[i].classList.add('filled');
-                                    else dots[i].classList.remove('filled');
-                                }
+                    var holdTimer = null;
+                    var holdProgress = 0;
+                    var shakeFillEl = document.getElementById('shakeFill');
+                    var shakeCountTextEl = document.getElementById('shakeCountText');
+
+                    d.shakeBox.addEventListener('touchstart', function(e) {
+                        if (s.humanDone || s.sessionEnded || (e && e.isTrusted === false)) return;
+                        d.shakeBox.classList.add('shaking');
+                        holdTimer = setInterval(function() {
+                            holdProgress += 4;
+                            if (holdProgress > 100) holdProgress = 100;
+                            if (shakeFillEl) shakeFillEl.style.width = holdProgress + '%';
+                            if (shakeCountTextEl) shakeCountTextEl.textContent = holdProgress + '% hoàn thành';
+                            
+                            if (holdProgress >= 100) {
+                                clearInterval(holdTimer);
+                                module.core.markHumanDone();
                             }
-                            if (s.shakeCount >= s.NEED_SHAKES) module.core.markHumanDone();
+                        }, 100);
+                    }, { passive: true });
+
+                    var stopHoldHandler = function() {
+                        if (holdTimer) {
+                            clearInterval(holdTimer);
+                            holdTimer = null;
                         }
-                    });
+                        if (s.humanDone) return;
+                        d.shakeBox.classList.remove('shaking');
+                        holdProgress = 0;
+                        if (shakeFillEl) shakeFillEl.style.width = '0%';
+                        if (shakeCountTextEl) shakeCountTextEl.textContent = '0% hoàn thành';
+                    };
+
+                    d.shakeBox.addEventListener('touchend', stopHoldHandler);
+                    d.shakeBox.addEventListener('touchcancel', stopHoldHandler);
                 }
             };
 
