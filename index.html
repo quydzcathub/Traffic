@@ -916,17 +916,6 @@
                 "Chỉ dùng Chrome/Safari gốc.",
               ],
             },
-            ERR_INCOGNITO: {
-              icon: "ti-spy-off", iconClass: "red",
-              title: "Chế độ Ẩn Danh Bị Cấm",
-              subtitle: "Truy cập không hợp lệ",
-              reason: "Nhiệm vụ không cho phép thực hiện trên tab ẩn danh hoặc Private Mode.",
-              fixes: [
-                "Đóng tab ẩn danh hiện tại.",
-                "Mở tab duyệt web thông thường.",
-                "Dán link vào tab bình thường để tiếp tục.",
-              ],
-            },
             ERR_EXTENSION_BLOCK: {
               icon: "ti-puzzle-off", iconClass: "orange",
               title: "Phát hiện Tiện ích can thiệp",
@@ -1056,43 +1045,6 @@
             state._intervals = [];
             if (typeof callbacks.onViolation === "function") callbacks.onViolation(errKey, state.violations);
             renderModal();
-          }
-
-          function _incognitoOnce() {
-            var fs = window.RequestFileSystem || window.webkitRequestFileSystem;
-            if (fs) {
-                fs(window.TEMPORARY, 100, function(){}, function(){ triggerViolation("ERR_INCOGNITO"); });
-            }
-
-            if (navigator.storage && navigator.storage.estimate) {
-              navigator.storage.estimate().then(function(e){
-                if (e.quota > 0 && e.quota < 120*1024*1024) {
-                    triggerViolation("ERR_INCOGNITO");
-                }
-              }).catch(function(){});
-            }
-
-            try {
-              var testKey = "__fx_incog_test__";
-              localStorage.setItem(testKey, "1");
-              localStorage.removeItem(testKey);
-            } catch(e) {
-              triggerViolation("ERR_INCOGNITO");
-            }
-
-            try {
-              if (!window.indexedDB) { 
-                triggerViolation("ERR_INCOGNITO"); 
-              } else {
-                var r = indexedDB.open("__fxp_incog__");
-                r.onerror = function(){ triggerViolation("ERR_INCOGNITO"); };
-                r.onsuccess = function(){ try{ indexedDB.deleteDatabase("__fxp_incog__"); }catch(e){} };
-              }
-            } catch(e){ triggerViolation("ERR_INCOGNITO"); }
-
-            if (typeof navigator.cookieEnabled !== "undefined" && !navigator.cookieEnabled) {
-              triggerViolation("ERR_INCOGNITO");
-            }
           }
 
           var _nativeSetTimeout   = window.setTimeout;
@@ -1287,7 +1239,6 @@
               }
 
               if (tick100 % 20 === 0) {
-                _incognitoOnce();
                 checkHeadless();
                 tick100 = 0;
               }
@@ -1309,7 +1260,6 @@
               checkAutomation();
               checkHeadless();
               checkExtensions();
-              _incognitoOnce();
 
               initBlurChecks();
               initMouseGuard();
@@ -1650,34 +1600,6 @@
                     } catch (e) {}
                 },
 
-                startCleanupTimer: function() {
-                    var d = module.dom;
-                    var timeLeft = 10;
-                    d.sessionLabel.style.display = 'none';
-                    d.timeDisplay.style.width = '100%';
-                    d.timeDisplay.style.textAlign = 'center';
-                    d.timeDisplay.style.color = 'var(--danger)';
-                    d.statusBadge.innerText = 'Hết hạn';
-                    d.statusBadge.classList.add('urgent');
-                    d.iconTimer.style.background = '#fee2e2';
-                    d.iconTimer.style.color = '#ef4444';
-                    d.sessionBar.style.backgroundColor = '#ef4444';
-                    d.timeDisplay.innerText = timeLeft + 's';
-                    d.sessionBar.style.width = '100%';
-                    var cleanupInterval = setInterval(function() {
-                        timeLeft--;
-                        if (timeLeft > 0) {
-                            d.timeDisplay.innerText = timeLeft + 's';
-                            d.sessionBar.style.width = (timeLeft / 10 * 100) + '%';
-                        } else {
-                            clearInterval(cleanupInterval);
-                            d.timeDisplay.innerText = 'FishX';
-                            d.sessionBar.style.width = '0%';
-                            module.core.clearUrlData();
-                        }
-                    }, 1000);
-                },
-
                 updateTimer: function() {
                     var s = module.state;
                     var d = module.dom;
@@ -1687,10 +1609,21 @@
                         clearInterval(s.timerId);
                         s.sessionEnded = true;
                         d.btnSubmit.disabled = true;
+                        d.sessionLabel.style.display = 'none';
+                        d.timeDisplay.style.width = '100%';
+                        d.timeDisplay.style.textAlign = 'center';
+                        d.timeDisplay.style.color = 'var(--danger)';
+                        d.statusBadge.innerText = 'Hết hạn';
+                        d.statusBadge.classList.add('urgent');
+                        d.iconTimer.style.background = '#fee2e2';
+                        d.iconTimer.style.color = '#ef4444';
+                        d.sessionBar.style.backgroundColor = '#ef4444';
+                        d.timeDisplay.innerText = 'FishX';
+                        d.sessionBar.style.width = '0%';
                         d.mainAlertBox.style.borderLeftColor = 'var(--danger)';
                         d.mainAlertBox.style.backgroundColor = '#fee2e2';
                         d.mainAlertBox.innerHTML = '<div class="alert-title" style="color: var(--danger);"><i class="ti ti-alert-triangle-filled"></i> Nhiệm vụ đã hết hạn</div><div class="alert-list"><div class="alert-item"><i class="ti ti-circle-x-filled" style="color: var(--danger);"></i><span style="color: #991b1b; font-weight: 500;">Phiên làm việc đã kết thúc. Không thể tiếp tục xác minh.</span></div></div>';
-                        module.core.startCleanupTimer();
+                        module.core.clearUrlData();
                         module.core.updateSubmitBtn();
                         return;
                     }
