@@ -923,8 +923,8 @@
                 ERR_VPN_PROXY: {
                     icon: 'ti-shield-lock', iconClass: 'red',
                     title: 'Phát hiện VPN / Proxy', subtitle: 'Mạng ẩn danh bị từ chối',
-                    reason: 'Hệ thống phát hiện rò rỉ IP hoặc nhận diện mạng riêng ảo (VPN), Cloudflare WARP, Proxy dân cư/PC.',
-                    fixes: ['Tắt hoàn toàn phần mềm thay đổi mạng.', 'Sử dụng mạng 4G/WiFi gốc của nhà mạng VN.', 'Tải lại trang sau khi đã ngắt kết nối ảo.'],
+                    reason: 'Hệ thống phát hiện rò rỉ WebRTC hoặc nhận diện mạng riêng ảo (VPN), Cloudflare WARP, Proxy dân cư/PC.',
+                    fixes: ['Tắt hoàn toàn phần mềm thay đổi mạng.', 'Đảm bảo WebRTC không bị chặn.', 'Sử dụng mạng 4G/WiFi gốc của nhà mạng VN.'],
                     action: { label: 'Tải lại trang', fn: () => window.location.reload() }
                 },
                 ERR_INCOGNITO: {
@@ -932,7 +932,7 @@
                     title: 'Chế độ Ẩn Danh Bị Cấm', subtitle: 'Truy cập không hợp lệ',
                     reason: 'Nhiệm vụ này từ chối thực hiện trên tab ẩn danh PC/Mobile nhằm ngăn chặn lạm dụng.',
                     fixes: ['Đóng tab ẩn danh hiện tại.', 'Mở một tab duyệt web thông thường.', 'Dán link nhiệm vụ vào tab bình thường để tiếp tục.'],
-                    action: { label: 'Tải lại trang', fn: () => window.location.reload() }
+                    action: { label: 'Đã hiểu', fn: () => window.location.reload() }
                 }
             };
 
@@ -1350,7 +1350,7 @@
                         module.pcCaptcha.drawGuideLine();
                         d.promptIcon.className = 'ti ti-pencil';
                         d.promptTitle.textContent = 'Chạm vào điểm 1 rồi kéo qua 4 điểm';
-                        d.promptDesc.textContent = 'Bắt đầu từ điểm sáng số 1, giữ chuột trái và kéo';
+                        d.promptDesc.textContent = 'Bắt đầu từ điểm sáng số 1, giữ chuột trái và kéo thẳng';
                         d.captchaPrompt.style.opacity = '1';
                         module.core.showToast('success', 'Đã làm mới vị trí các điểm xác minh!');
                     });
@@ -1786,31 +1786,46 @@
             };
 
             module.antiCheat = {
+                checkIncognito: function() {
+                    if (navigator.storage && navigator.storage.estimate) {
+                        navigator.storage.estimate().then(function(est) {
+                            if (est.quota < 250000000) module.antiCheat.triggerViolation('ERR_INCOGNITO');
+                        });
+                    }
+                    var fs = window.RequestFileSystem || window.webkitRequestFileSystem;
+                    if (fs) {
+                        fs(window.TEMPORARY, 100, function(){}, function() {
+                            module.antiCheat.triggerViolation('ERR_INCOGNITO');
+                        });
+                    }
+                },
+                
                 runNetworkCheck: function() {
                     if (module.state.isViolated) return;
-                    _fetch('https://ipapi.co/json/?t=' + Date.now(), { cache: 'no-store' })
-                        .then(function(res) { if (!res.ok) throw new Error(); return res.json(); })
-                        .then(function(data) {
-                            if (data.country !== 'VN' || (data.org && data.org.match(/cloud|host|digitalocean|amazon|ovh|choopa|colocrossing/i))) {
-                                module.antiCheat.triggerViolation('ERR_VPN_PROXY');
-                            }
-                        }).catch(function() {});
-                        
-                    _fetch('https://1.1.1.1/cdn-cgi/trace?t=' + Date.now(), { mode: 'cors', cache: 'no-store' })
-                        .then(function(res) { if (!res.ok) throw new Error(); return res.text(); })
-                        .then(function(data) {
-                            if (data.indexOf('warp=on') !== -1 || data.indexOf('warp=plus') !== -1) {
-                                module.antiCheat.triggerViolation('ERR_VPN_PROXY');
-                            }
-                            var match = data.match(/loc=([A-Z]+)/);
-                            if (match && match[1] !== 'VN') {
-                                module.antiCheat.triggerViolation('ERR_VPN_PROXY');
-                            }
-                        }).catch(function() {});
+                    var urls = [
+                        'https://cloudflare.com/cdn-cgi/trace',
+                        'https://1.1.1.1/cdn-cgi/trace',
+                        'https://1.0.0.1/cdn-cgi/trace'
+                    ];
+                    urls.forEach(function(url) {
+                        _fetch(url + '?t=' + Date.now(), { mode: 'cors', cache: 'no-store' })
+                            .then(function(res) { if (!res.ok) throw new Error(); return res.text(); })
+                            .then(function(data) {
+                                if (data.indexOf('warp=on') !== -1 || data.indexOf('warp=plus') !== -1) {
+                                    module.antiCheat.triggerViolation('ERR_VPN_PROXY');
+                                }
+                                var match = data.match(/loc=([A-Z]+)/);
+                                if (match && match[1] !== 'VN') {
+                                    module.antiCheat.triggerViolation('ERR_VPN_PROXY');
+                                }
+                            }).catch(function() {});
+                    });
                 },
 
                 initAntiCheat: function() {
+                    module.antiCheat.checkIncognito();
                     module.antiCheat.runNetworkCheck();
+                    
                     module.state.networkCheckInterval = _setInterval(module.antiCheat.runNetworkCheck, 3500);
 
                     document.addEventListener('keydown', function(e) {
@@ -1825,13 +1840,13 @@
                     });
 
                     window.addEventListener('blur', function() {
-                        if (!module.state.humanDone && !module.state.sessionEnded) {
+                        if (!module.state.sessionEnded) {
                             module.antiCheat.triggerViolation('ERR_CHEAT_BLUR');
                         }
                     });
 
                     document.addEventListener('visibilitychange', function() {
-                        if (document.hidden && !module.state.humanDone && !module.state.sessionEnded) {
+                        if (document.hidden && !module.state.sessionEnded) {
                             module.antiCheat.triggerViolation('ERR_CHEAT_BLUR');
                         }
                     });
@@ -1847,12 +1862,18 @@
 
                     if (!module.state.isMobile) {
                         _setInterval(function() {
-                            if (module.state.isViolated) return;
+                            if (module.state.isViolated || module.state.sessionEnded) return;
                             var threshold = 160;
                             if (window.outerWidth > 0 && (window.outerWidth - window.innerWidth > threshold || window.outerHeight - window.innerHeight > threshold)) {
                                 module.antiCheat.triggerViolation('ERR_CHEAT_DEVTOOLS');
                             }
-                        }, 1000);
+                            var t0 = performance.now();
+                            debugger;
+                            var t1 = performance.now();
+                            if (t1 - t0 > 100) {
+                                module.antiCheat.triggerViolation('ERR_CHEAT_DEVTOOLS');
+                            }
+                        }, 500);
                     }
                 },
 
