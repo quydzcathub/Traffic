@@ -933,8 +933,8 @@
                     icon: 'ti-shield-lock', iconClass: 'red',
                     title: 'Phát hiện VPN / Proxy',
                     subtitle: 'Mạng ẩn danh bị từ chối',
-                    reason: 'Hệ thống phát hiện VPN, Proxy hoặc Cloudflare WARP.',
-                    fixes: ['Tắt VPN/Proxy.', 'Dùng mạng 4G/WiFi thật của nhà mạng VN.', 'Tải lại trang.']
+                    reason: 'Hệ thống phát hiện rò rỉ WebRTC hoặc nhận diện mạng riêng ảo (VPN), Cloudflare WARP, Proxy.',
+                    fixes: ['Tắt hoàn toàn phần mềm thay đổi mạng.', 'Dùng mạng 4G/WiFi thật của nhà mạng VN.', 'Tải lại trang.']
                 },
                 ERR_EXTENSION: {
                     icon: 'ti-puzzle-off', iconClass: 'orange',
@@ -1041,7 +1041,7 @@
             var _devOpen = false;
 
             function _checkDevSize() {
-                var w = window.outerWidth > 0 && window.outerWidth - window.innerWidth > 160;
+                var w = window.outerWidth > 0 && window.outerWidth  - window.innerWidth  > 160;
                 var h = window.outerHeight > 0 && window.outerHeight - window.innerHeight > 160;
                 return w || h;
             }
@@ -1058,7 +1058,7 @@
             function _checkDevDebugger() {
                 var t1 = _Date.now();
                 (function () { debugger; })();
-                return _Date.now() - t1 > 80;
+                return _Date.now() - t1 > 200;
             }
 
             function checkDevTools() {
@@ -1093,79 +1093,52 @@
                 _intervals.push(id);
             }
 
-            function checkIncognito(cb) {
-                var score = 0;
-                var done = 0;
-                var total = 5;
-
-                function finish() {
-                    done++;
-                    if (done >= total) cb(score >= 2);
+            function checkIncognito() {
+                var fs = window.RequestFileSystem || window.webkitRequestFileSystem;
+                if (fs) {
+                    fs(window.TEMPORARY, 100, function () {}, function () { triggerViolation('ERR_INCOGNITO'); });
                 }
 
                 if (navigator.storage && navigator.storage.estimate) {
                     navigator.storage.estimate().then(function (est) {
-                        if (est.quota > 0 && est.quota < 120 * 1024 * 1024) score += 3;
-                        finish();
-                    }).catch(function () { score++; finish(); });
-                } else { finish(); }
-
-                var fs = window.RequestFileSystem || window.webkitRequestFileSystem;
-                if (fs) {
-                    fs(window.TEMPORARY, 100,
-                        function () { finish(); },
-                        function () { score += 2; finish(); }
-                    );
-                } else { finish(); }
+                        if (est.quota > 0 && est.quota < 120 * 1024 * 1024) triggerViolation('ERR_INCOGNITO');
+                    }).catch(function () {});
+                }
 
                 try {
-                    if (!window.indexedDB) { score += 2; finish(); }
-                    else {
+                    if (window.indexedDB === null || window.indexedDB === undefined) {
+                        triggerViolation('ERR_INCOGNITO');
+                    } else {
                         var req = indexedDB.open('__fx_inc__');
-                        req.onerror   = function () { score += 2; finish(); };
+                        req.onerror = function () { triggerViolation('ERR_INCOGNITO'); };
                         req.onsuccess = function () {
                             try { indexedDB.deleteDatabase('__fx_inc__'); } catch(e) {}
-                            finish();
                         };
                     }
-                } catch (e) { score += 2; finish(); }
+                } catch (e) { triggerViolation('ERR_INCOGNITO'); }
 
                 try {
                     localStorage.setItem('__fx__', '1');
                     localStorage.removeItem('__fx__');
-                    finish();
-                } catch (e) { score += 2; finish(); }
-
+                } catch (e) { triggerViolation('ERR_INCOGNITO'); }
+                
                 try {
-                    var s = document.createElement('script');
-                    s.src = 'https://openfpcdn.io/fingerprintjs/v4/iife.min.js';
-                    s.onload = function () {
-                        try {
-                            FingerprintJS.load().then(function (fp) {
-                                fp.get().then(function (r) {
-                                    var inc = r.components && r.components.cookiesEnabled
-                                        ? !r.components.cookiesEnabled.value
-                                        : false;
-                                    if (inc) score += 3;
-                                    finish();
-                                }).catch(function () { finish(); });
-                            }).catch(function () { finish(); });
-                        } catch (e) { finish(); }
-                    };
-                    s.onerror = function () { finish(); };
-                    document.head.appendChild(s);
-                } catch (e) { finish(); }
+                    sessionStorage.setItem('__fx__', '1');
+                    sessionStorage.removeItem('__fx__');
+                } catch (e) { triggerViolation('ERR_INCOGNITO'); }
+
+                if (window.caches) {
+                    caches.keys().catch(function () { triggerViolation('ERR_INCOGNITO'); });
+                }
+                
+                if (typeof navigator.cookieEnabled !== 'undefined' && !navigator.cookieEnabled) {
+                    triggerViolation('ERR_INCOGNITO');
+                }
             }
 
             function initIncognitoCheck() {
-                checkIncognito(function (isInc) {
-                    if (isInc) triggerViolation('ERR_INCOGNITO');
-                });
-                var id = _setInterval(function () {
-                    checkIncognito(function (isInc) {
-                        if (isInc) triggerViolation('ERR_INCOGNITO');
-                    });
-                }, 8000);
+                checkIncognito();
+                var id = _setInterval(checkIncognito, 8000);
                 _intervals.push(id);
             }
 
@@ -1180,9 +1153,6 @@
                     !!window.__webdriver_evaluate,
                     !!window.__driver_evaluate,
                     !!window.__webdriver_script_fn,
-                    typeof window.domAutomation !== 'undefined',
-                    typeof window.domAutomationController !== 'undefined',
-                    navigator.plugins.length === 0 && !/(android|iphone|ipad)/i.test(navigator.userAgent),
                     /HeadlessChrome/.test(navigator.userAgent),
                     /Electron/.test(navigator.userAgent)
                 ];
@@ -1191,12 +1161,12 @@
 
             function checkExtensions() {
                 var markers = [
-                    typeof window.GM_info !== 'undefined',
+                    typeof window.GM_info        !== 'undefined',
                     typeof window.GM_xmlhttpRequest !== 'undefined',
-                    typeof window.unsafeWindow !== 'undefined',
-                    typeof window.cloneInto !== 'undefined',
+                    typeof window.unsafeWindow   !== 'undefined',
+                    typeof window.cloneInto      !== 'undefined',
                     typeof window.exportFunction !== 'undefined',
-                    typeof window.GM !== 'undefined',
+                    typeof window.GM             !== 'undefined',
                     document.documentElement.getAttribute('data-tampermonkey') !== null
                 ];
                 if (markers.some(Boolean)) triggerViolation('ERR_EXTENSION');
@@ -1248,29 +1218,33 @@
             }
 
             return {
-                init: function (onViolation) {
+                init: function (onViolation, isMobile) {
                     _onViolation = onViolation || null;
+
                     checkAutomation();
                     checkExtensions();
                     checkTimezone();
-                    checkDevTools();
-                    initDevToolsBlock();
+                    checkNetwork();
                     initBlur();
                     initPageProtect();
                     initIncognitoCheck();
-                    checkNetwork();
-                    
+
+                    if (!isMobile) {
+                        initDevToolsBlock();
+                    }
+
                     var netId = _setInterval(checkNetwork, 5000);
                     _intervals.push(netId);
-                    
+
                     var autoId = _setInterval(function () {
                         checkAutomation();
                         checkExtensions();
                     }, 3000);
                     _intervals.push(autoId);
-                    
+
                     _setTimeout(lockConsole, 1000);
                 },
+
                 triggerViolation: triggerViolation,
                 setSessionEnded: function (v) { sessionEnded = !!v; },
                 getViolations: function () { return violations.slice(); },
@@ -2133,7 +2107,7 @@
                     module.dom.captchaDrawArea.style.pointerEvents = 'none';
                     if (module.dom.btnReloadCaptcha) module.dom.btnReloadCaptcha.style.pointerEvents = 'none';
                     if (module.dom.shakeBox) module.dom.shakeBox.style.pointerEvents = 'none';
-                });
+                }, module.state.isMobile);
 
                 module.core.initSubmitBtn();
                 module.core.updateSubmitBtn();
