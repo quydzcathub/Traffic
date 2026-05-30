@@ -46,17 +46,17 @@
             touch-action: manipulation;
         }
 
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 24px 16px 60px;
-            transition: filter 0.3s;
-        }
-
+        /* ─── THÊM CSS DÀNH CHO ANTI-CHEAT ─── */
         body.violated .container {
             filter: blur(6px);
             opacity: 0.5;
             pointer-events: none !important;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 24px 16px 60px;
         }
 
         .session-card {
@@ -544,14 +544,13 @@
         .modal-overlay {
             position: fixed;
             inset: 0;
-            background: rgba(15, 23, 42, 0.85);
-            backdrop-filter: blur(12px);
-            z-index: 2147483647;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(8px);
+            z-index: 20000;
             display: none;
             align-items: center;
             justify-content: center;
             padding: 16px;
-            pointer-events: auto;
         }
         .modal-overlay.active {
             display: flex;
@@ -562,28 +561,26 @@
             max-width: 440px;
             width: 100%;
             border: 1px solid var(--border-color);
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-            overflow: auto;
-            max-height: 90vh;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            overflow: hidden;
             animation: modalScale 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-            pointer-events: auto;
         }
         @keyframes modalScale {
-            from { opacity: 0; transform: scale(0.95) translateY(10px); }
-            to { opacity: 1; transform: scale(1) translateY(0); }
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
         }
         .modal-body {
-            padding: 32px 24px;
+            padding: 24px;
             text-align: center;
         }
         .modal-icon-wrap {
-            width: 72px;
-            height: 72px;
+            width: 64px;
+            height: 64px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin: 0 auto 20px;
+            margin: 0 auto 16px;
         }
         .modal-icon-wrap.orange {
             background: #fff7ed;
@@ -598,75 +595,70 @@
             color: #64748b;
         }
         .modal-icon-wrap i {
-            font-size: 40px;
+            font-size: 36px;
         }
         .modal-title {
-            font-size: 20px;
+            font-size: 18px;
             font-weight: 800;
             color: var(--text-main);
-            margin-bottom: 6px;
+            margin-bottom: 4px;
         }
         .modal-subtitle {
-            font-size: 14px;
+            font-size: 13px;
             color: var(--text-muted);
             font-weight: 500;
-            margin-bottom: 20px;
+            margin-bottom: 16px;
         }
         .modal-reason {
             background: #f8fafc;
             border-radius: 8px;
-            padding: 14px;
+            padding: 12px;
             font-size: 13px;
             color: #475569;
             text-align: left;
-            margin-bottom: 20px;
-            border-left: 4px solid #cbd5e1;
-            line-height: 1.6;
+            margin-bottom: 16px;
+            border-left: 3px solid #cbd5e1;
         }
         .modal-fixes {
             text-align: left;
-            margin-bottom: 28px;
+            margin-bottom: 24px;
         }
         .modal-fixes-title {
             font-size: 12px;
-            font-weight: 800;
+            font-weight: 700;
             color: var(--text-main);
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            margin-bottom: 12px;
+            margin-bottom: 8px;
         }
         .modal-fix-item {
             display: flex;
             align-items: flex-start;
-            gap: 10px;
-            font-size: 13.5px;
+            gap: 8px;
+            font-size: 13px;
             color: #334155;
-            margin-bottom: 8px;
-            line-height: 1.5;
+            margin-bottom: 6px;
         }
         .modal-fix-item i {
             color: var(--primary);
-            font-size: 18px;
-            margin-top: 1px;
+            font-size: 16px;
+            margin-top: 2px;
             flex-shrink: 0;
         }
         .modal-btn {
             width: 100%;
-            height: 48px;
+            height: 44px;
             background: var(--text-main);
             color: #fff;
             border: none;
-            border-radius: 12px;
+            border-radius: 10px;
             font-weight: 700;
-            font-size: 15px;
+            font-size: 14px;
             cursor: pointer;
             transition: all 0.2s;
-            font-family: 'Be Vietnam Pro', sans-serif;
         }
         .modal-btn:hover {
             opacity: 0.9;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
 
         .toast-container {
@@ -747,14 +739,15 @@
 </head>
 <body>
 
-    <div id="physicalBlocker" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; z-index:2147483646; background:transparent;"></div>
-
     <div class="toast-container" id="toastBox"></div>
 
     <div class="overlay" id="globalOverlay">
         <div class="spinner"></div>
-        <div class="overlay-text" id="overlayText">Đang xử lý & Chuyển hướng...</div>
+        <div class="overlay-text">Đang xử lý & Chuyển hướng...</div>
     </div>
+
+    <!-- Khối chắn vật lý (tuỳ chọn sử dụng cùng FishXAntiCheat) -->
+    <div id="physicalBlocker" style="position: fixed; inset: 0; z-index: 19000; display: none;"></div>
 
     <div class="modal-overlay" id="errModalOverlay">
         <div class="modal-card">
@@ -802,15 +795,15 @@
                     <div class="alert-list">
                         <div class="alert-item">
                             <i class="ti ti-circle-x-filled" style="color: var(--danger);"></i>
-                            <span><strong>Cấm VPN/Proxy</strong> — Hệ thống kiểm tra liên tục IP và kết nối mạng ẩn.</span>
+                            <span><strong>Cấm VPN/Proxy</strong> — Hệ thống chỉ chấp nhận mạng 4G/WiFi trong nước.</span>
                         </div>
                         <div class="alert-item">
                             <i class="ti ti-circle-x-filled" style="color: var(--danger);"></i>
-                            <span><strong>Cấm Antidetect</strong> — Các trình duyệt giả lập, tab ẩn danh bị cấm 100%.</span>
+                            <span><strong>Cấm Cheat, Bypass</strong> — Mọi hành vi gian lận sẽ bị khóa IP vĩnh viễn.</span>
                         </div>
                         <div class="alert-item">
                             <i class="ti ti-circle-check-filled" style="color: var(--primary);"></i>
-                            <span>Chỉ sử dụng trình duyệt <strong>Chrome</strong> hoặc <strong>Safari</strong> nguyên bản.</span>
+                            <span>Chỉ sử dụng trình duyệt <strong>Chrome</strong> hoặc <strong>Safari</strong> chuẩn.</span>
                         </div>
                     </div>
                 </div>
@@ -851,7 +844,7 @@
                                     <div class="captcha-prompt" id="captchaPrompt">
                                         <i class="ti ti-pencil" id="promptIcon"></i>
                                         <div class="prompt-title" id="promptTitle">Chạm vào điểm 1 rồi kéo qua 4 điểm</div>
-                                        <div class="prompt-desc" id="promptDesc">Bắt đầu từ điểm sáng số 1, giữ chuột trái và kéo thẳng</div>
+                                        <div class="prompt-desc" id="promptDesc">Bắt đầu từ điểm sáng số 1, giữ chuột trái và kéo</div>
                                     </div>
                                     <canvas id="drawCanvas"></canvas>
                                 </div>
@@ -893,15 +886,435 @@
     </div>
 
     <script>
+        /**
+         * ============================================================
+         *  FishX Anti-Cheat Module — Standalone
+         * ============================================================
+         */
+        var FishXAntiCheat = (function () {
+          var _setTimeout = window.setTimeout.bind(window);
+
+          var state = {
+            violations: [],
+            sessionEnded: false,
+            isMobile: false,
+            motionHandler: null,
+          };
+
+          var errorCatalog = {
+            ERR_CHEAT_DEVTOOLS: {
+              icon: "ti-code-off",
+              iconClass: "red",
+              title: "Phát hiện Developer Tools",
+              subtitle: "Hành vi can thiệp trái phép",
+              reason: "Hệ thống bảo mật ghi nhận bạn đang mở hoặc cố gắng mở bảng điều khiển nhà phát triển.",
+              fixes: ["Đóng ngay lập tức bảng điều khiển F12 / Inspect.", "Không cố gắng kiểm tra mã nguồn hệ thống.", "Tải lại trang để khôi phục trạng thái."],
+            },
+            ERR_CHEAT_BLUR: {
+              icon: "ti-eye-off",
+              iconClass: "orange",
+              title: "Rời khỏi tab làm việc",
+              subtitle: "Yêu cầu duy trì tiêu điểm",
+              reason: "Hệ thống giao diện phát hiện bạn đã chuyển sang tab khác hoặc thu nhỏ trình duyệt.",
+              fixes: ["Luôn giữ màn hình xác thực hoạt động liên tục.", "Không chạy ngầm hoặc chuyển đổi ứng dụng.", "Thực hiện lại captcha."],
+            },
+            ERR_CHEAT_AUTOMATION: {
+              icon: "ti-robot",
+              iconClass: "red",
+              title: "Phát hiện Công cụ / Antidetect",
+              subtitle: "Hành vi giả lập bị từ chối",
+              reason: "Trình duyệt đang được điều khiển bởi một công cụ tự động hóa hoặc trình duyệt Antidetect PC.",
+              fixes: ["Tắt hoàn toàn các công cụ Selenium, Puppeteer, hoặc Antidetect Browser.", "Chỉ sử dụng trình duyệt Chrome/Safari gốc không tiện ích can thiệp."],
+            },
+            ERR_VPN_PROXY: {
+              icon: "ti-shield-lock",
+              iconClass: "red",
+              title: "Phát hiện VPN / Proxy",
+              subtitle: "Mạng ẩn danh bị từ chối",
+              reason: "Hệ thống phát hiện kết nối mạng của bạn thông qua máy chủ riêng ảo (VPN) hoặc Cloudflare WARP.",
+              fixes: ["Tắt hoàn toàn phần mềm thay đổi mạng.", "Sử dụng mạng 4G/WiFi gốc của nhà mạng VN.", "Tải lại trang sau khi đã ngắt kết nối ảo."],
+            },
+            ERR_EXTENSION_BLOCK: {
+              icon: "ti-puzzle-off",
+              iconClass: "orange",
+              title: "Phát hiện Tiện ích can thiệp",
+              subtitle: "Phát hiện Script chèn ép",
+              reason: "Trình duyệt đang chạy các tập lệnh tự động hóa bị ghi đè vào hệ thống lõi.",
+              fixes: ["Vô hiệu hóa Tampermonkey / Violentmonkey.", "Tắt các Tool Auto Click.", "Sử dụng trình duyệt không cài tiện ích."],
+            },
+            ERR_INCOGNITO: {
+              icon: "ti-spy-off",
+              iconClass: "red",
+              title: "Chế độ Ẩn Danh Bị Cấm",
+              subtitle: "Truy cập không hợp lệ",
+              reason: "Nhiệm vụ này từ chối thực hiện trên tab ẩn danh PC/Mobile nhằm ngăn chặn lạm dụng.",
+              fixes: ["Đóng tab ẩn danh hiện tại.", "Mở một tab duyệt web thông thường.", "Dán link nhiệm vụ vào tab bình thường để tiếp tục."],
+            },
+          };
+
+          var callbacks = { onViolation: null, onRenderModal: null };
+
+          var dom = {
+            container: null, physicalBlocker: null, btnSubmit: null,
+            errModalOverlay: null, modalIconWrap: null, modalIcon: null,
+            modalTitle: null, modalSubtitle: null, modalReason: null,
+            modalFixesList: null, modalActionBtn: null,
+          };
+
+          function detectMobile() {
+            var ua = navigator.userAgent.toLowerCase();
+            var mobs = ["android", "iphone", "ipad", "ipod", "blackberry", "windows phone", "webos"];
+            var isMobUA = mobs.some(function (k) { return ua.indexOf(k) !== -1; });
+            var hasTouch = ("ontouchstart" in window || navigator.maxTouchPoints > 0) && window.innerWidth <= 768;
+            state.isMobile = isMobUA || hasTouch;
+          }
+
+          function initDomRefs() {
+            dom.container        = document.querySelector(".container");
+            dom.physicalBlocker  = document.getElementById("physicalBlocker");
+            dom.btnSubmit        = document.getElementById("btnSubmit");
+            dom.errModalOverlay  = document.getElementById("errModalOverlay");
+            dom.modalIconWrap    = document.getElementById("modalIconWrap");
+            dom.modalIcon        = document.getElementById("modalIcon");
+            dom.modalTitle       = document.getElementById("modalTitle");
+            dom.modalSubtitle    = document.getElementById("modalSubtitle");
+            dom.modalReason      = document.getElementById("modalReason");
+            dom.modalFixesList   = document.getElementById("modalFixesList");
+            dom.modalActionBtn   = document.getElementById("modalActionBtn");
+          }
+
+          function renderModal() {
+            if (typeof callbacks.onRenderModal === "function") {
+              callbacks.onRenderModal(state.violations, errorCatalog);
+              return;
+            }
+            var overlay = dom.errModalOverlay;
+            if (!overlay) return;
+
+            dom.modalFixesList.innerHTML = "";
+            dom.modalReason.innerHTML = "";
+
+            if (state.violations.length === 1) {
+              var err = errorCatalog[state.violations[0]];
+              if (!err) return;
+              dom.modalIconWrap.className = "modal-icon-wrap " + err.iconClass;
+              dom.modalIcon.className = "ti " + err.icon;
+              dom.modalTitle.textContent = err.title;
+              dom.modalSubtitle.textContent = err.subtitle;
+              dom.modalReason.innerHTML = err.reason;
+              err.fixes.forEach(function (fix) {
+                var item = document.createElement("div");
+                item.className = "modal-fix-item";
+                item.innerHTML = '<i class="ti ti-circle-check-filled"></i><span>' + fix + "</span>";
+                dom.modalFixesList.appendChild(item);
+              });
+            } else {
+              dom.modalIconWrap.className = "modal-icon-wrap red";
+              dom.modalIcon.className = "ti ti-shield-x";
+              dom.modalTitle.textContent = "Đa Vi Phạm (" + state.violations.length + ")";
+              dom.modalSubtitle.textContent = "Hệ thống ghi nhận " + state.violations.length + " hành vi gian lận";
+
+              var combinedReason = "";
+              var allFixes = [];
+              state.violations.forEach(function (vKey, index) {
+                var e = errorCatalog[vKey];
+                if (!e) return;
+                combinedReason += "<strong>" + (index + 1) + ". " + e.title + ":</strong> " + e.reason + "<br><br>";
+                e.fixes.forEach(function (f) {
+                  if (allFixes.indexOf(f) === -1) allFixes.push(f);
+                });
+              });
+
+              dom.modalReason.innerHTML = combinedReason;
+              allFixes.forEach(function (fix) {
+                var item = document.createElement("div");
+                item.className = "modal-fix-item";
+                item.innerHTML = '<i class="ti ti-circle-check-filled"></i><span>' + fix + "</span>";
+                dom.modalFixesList.appendChild(item);
+              });
+            }
+            dom.modalActionBtn.textContent = "Tải lại trang";
+            dom.modalActionBtn.onclick = function () { window.location.reload(); };
+            overlay.classList.add("active");
+          }
+
+          function triggerViolation(errKey) {
+            var isNew = state.violations.indexOf(errKey) === -1;
+            if (!isNew) return;
+            state.violations.push(errKey);
+
+            if (dom.container) {
+              document.body.classList.add("violated");
+            }
+            if (dom.physicalBlocker) dom.physicalBlocker.style.display = "block";
+            if (dom.btnSubmit) dom.btnSubmit.disabled = true;
+
+            if (state.motionHandler) {
+              window.removeEventListener("devicemotion", state.motionHandler);
+            }
+
+            if (typeof callbacks.onViolation === "function") {
+              callbacks.onViolation(errKey, state.violations);
+            }
+            renderModal();
+          }
+
+          function checkIncognito() {
+            var fs = window.RequestFileSystem || window.webkitRequestFileSystem;
+            if (fs) {
+              fs(window.TEMPORARY, 100, function () {}, function () { triggerViolation("ERR_INCOGNITO"); });
+            }
+            if (navigator.storage && navigator.storage.estimate) {
+              navigator.storage.estimate().then(function (est) {
+                if (est.quota > 0 && est.quota < 120 * 1024 * 1024) triggerViolation("ERR_INCOGNITO");
+              }).catch(function () {});
+            }
+            try {
+              if (window.indexedDB === null || window.indexedDB === undefined) {
+                triggerViolation("ERR_INCOGNITO");
+              } else {
+                var req = indexedDB.open("__fx_probe__");
+                req.onerror = function () { triggerViolation("ERR_INCOGNITO"); };
+                req.onsuccess = function () { try { indexedDB.deleteDatabase("__fx_probe__"); } catch (e) {} };
+              }
+            } catch (e) { triggerViolation("ERR_INCOGNITO"); }
+            try { localStorage.setItem("__fx__", "1"); localStorage.removeItem("__fx__"); } catch (e) { triggerViolation("ERR_INCOGNITO"); }
+            try { sessionStorage.setItem("__fx__", "1"); sessionStorage.removeItem("__fx__"); } catch (e) { triggerViolation("ERR_INCOGNITO"); }
+            if (window.caches) { caches.keys().catch(function () { triggerViolation("ERR_INCOGNITO"); }); }
+            if (typeof navigator.cookieEnabled !== "undefined" && !navigator.cookieEnabled) { triggerViolation("ERR_INCOGNITO"); }
+            if ("serviceWorker" in navigator) {
+              navigator.serviceWorker.getRegistrations().catch(function () { triggerViolation("ERR_INCOGNITO"); });
+            }
+            try { var channel = new BroadcastChannel("__fx_bc__"); channel.close(); } catch (e) { triggerViolation("ERR_INCOGNITO"); }
+          }
+
+          function runNetworkCheck() {
+            var urls = ["https://cloudflare.com/cdn-cgi/trace", "https://1.1.1.1/cdn-cgi/trace"];
+            urls.forEach(function (url) {
+              window.fetch(url + "?t=" + Date.now(), { mode: "cors", cache: "no-store" })
+                .then(function (res) { if (!res.ok) throw new Error(); return res.text(); })
+                .then(function (data) {
+                  if (data.indexOf("warp=on") !== -1 || data.indexOf("warp=plus") !== -1) triggerViolation("ERR_VPN_PROXY");
+                  var match = data.match(/loc=([A-Z]+)/);
+                  if (match && match[1] !== "VN") triggerViolation("ERR_VPN_PROXY");
+                }).catch(function () {});
+            });
+          }
+
+          function initDevToolsChecks() {
+            document.addEventListener("keydown", function (e) {
+                var blocked = e.key === "F12" ||
+                  (e.ctrlKey && e.shiftKey && ["I", "J", "C", "K"].indexOf(e.key) !== -1) ||
+                  (e.ctrlKey && ["U", "S"].indexOf(e.key) !== -1) ||
+                  (e.metaKey && e.altKey && ["I", "J", "C"].indexOf(e.key) !== -1);
+                if (blocked) {
+                  e.preventDefault(); e.stopImmediatePropagation();
+                  triggerViolation("ERR_CHEAT_DEVTOOLS");
+                }
+              }, true);
+
+            if (!state.isMobile) {
+              var devToolsOpen = false;
+              function detectViaDebugger() {
+                var before = Date.now();
+                debugger; // eslint-disable-line no-debugger
+                var after = Date.now();
+                if (after - before > 100) {
+                  if (!devToolsOpen) { devToolsOpen = true; triggerViolation("ERR_CHEAT_DEVTOOLS"); }
+                } else { devToolsOpen = false; }
+              }
+              function detectViaSize() {
+                var widthThreshold  = window.outerWidth  - window.innerWidth  > 160;
+                var heightThreshold = window.outerHeight - window.innerHeight > 160;
+                if (window.outerWidth > 0 && (widthThreshold || heightThreshold)) {
+                  triggerViolation("ERR_CHEAT_DEVTOOLS");
+                }
+              }
+              window.setInterval(detectViaDebugger, 1500);
+              window.setInterval(detectViaSize, 1000);
+            }
+          }
+
+          function initBlurChecks() {
+            window.addEventListener("blur", function () {
+              if (!state.sessionEnded) triggerViolation("ERR_CHEAT_BLUR");
+            });
+            document.addEventListener("visibilitychange", function () {
+              if (document.hidden && !state.sessionEnded) triggerViolation("ERR_CHEAT_BLUR");
+            });
+          }
+
+          function checkAutomation() {
+            var isWebDriver = navigator.webdriver || document.documentElement.getAttribute("webdriver") ||
+              window._phantom || window.__nightmare || window.callPhantom || window.Buffer ||
+              (window.chrome && window.chrome.runtime && Object.keys(window.chrome.runtime).length === 0);
+            if (isWebDriver) triggerViolation("ERR_CHEAT_AUTOMATION");
+          }
+
+          function checkTimezone() {
+            var tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            var allowed = ["Asia/Ho_Chi_Minh", "Asia/Saigon", "Asia/Bangkok", "Asia/Vientiane"];
+            if (allowed.indexOf(tz) === -1) triggerViolation("ERR_VPN_PROXY");
+          }
+
+          function disableContextMenu() {
+            document.addEventListener("contextmenu", function (e) { e.preventDefault(); });
+          }
+
+          return {
+            init: function (options) {
+              options = options || {};
+              if (typeof options.onViolation === "function")   callbacks.onViolation   = options.onViolation;
+              if (typeof options.onRenderModal === "function") callbacks.onRenderModal = options.onRenderModal;
+
+              initDomRefs();
+              detectMobile();
+              checkAutomation();
+              checkTimezone();
+              checkIncognito();
+              runNetworkCheck();
+              disableContextMenu();
+              initDevToolsChecks();
+              initBlurChecks();
+
+              window.setInterval(runNetworkCheck, 3000);
+              window.setInterval(checkIncognito, 5000);
+            },
+            trigger: triggerViolation,
+            endSession: function () { state.sessionEnded = true; },
+            getViolations: function () { return state.violations.slice(); },
+            hasViolation: function () { return state.violations.length > 0; },
+            errorCatalog: errorCatalog,
+          };
+        })();
+
+        /**
+         * ============================================================
+         *  FishX Main Module (Traffic Application)
+         * ============================================================
+         */
         var fishX = (function() {
             var module = {};
-            var _setTimeout = window.setTimeout.bind(window);
+
+            module.errorCatalog = {
+                ERR_FP_RATE_LIMIT: {
+                    icon: 'ti-gauge', iconClass: 'orange',
+                    title: 'Hệ thống xác thực quá tải', subtitle: 'Quá nhiều yêu cầu cùng lúc',
+                    reason: 'FingerprintJS API đang nhận quá nhiều yêu cầu. Thường tự khỏi sau vài giây.',
+                    fixes: ['Đợi 5–10 giây rồi nhấn "Thử lại ngay".', 'Tắt VPN nếu đang dùng.', 'Nếu vẫn lỗi sau 3 lần, tải lại trang.'],
+                    autoRetry: 8, action: { label: 'Thử lại ngay', fn: () => module.antiCheat.retryFingerprint() }
+                },
+                ERR_FP_TIMEOUT: {
+                    icon: 'ti-wifi-off', iconClass: 'orange',
+                    title: 'Kết nối quá chậm', subtitle: 'Xác thực thiết bị không phản hồi',
+                    reason: 'Mạng quá chậm hoặc bị chặn bởi VPN/1.1.1.1.',
+                    fixes: ['Tắt VPN, 1.1.1.1, hoặc proxy.', 'Chuyển WiFi ↔ 4G/5G.', 'Thử lại — nếu vẫn lỗi, đổi Chrome.'],
+                    action: { label: 'Thử lại', fn: () => module.antiCheat.retryFingerprint() }
+                },
+                ERR_FP_FAILED: {
+                    icon: 'ti-fingerprint', iconClass: 'red',
+                    title: 'Xác thực thiết bị thất bại', subtitle: 'Không lấy được visitor ID',
+                    reason: 'Script xác thực không tải được. Thường do Incognito, VPN hoặc extension chặn.',
+                    fixes: ['Tắt chế độ Ẩn danh / Incognito.', 'Tắt VPN, Proxy, 1.1.1.1.', 'Tắt uBlock/AdBlock tạm thời.', 'Dùng Chrome bản mới nhất.'],
+                    action: { label: 'Thử lại', fn: () => module.antiCheat.retryFingerprint() }
+                },
+                ERR_FP_NO_VISITOR: {
+                    icon: 'ti-user-x', iconClass: 'red',
+                    title: 'Không lấy được ID thiết bị', subtitle: 'visitor_id trống',
+                    reason: 'Script chạy nhưng không trả về visitor_id. Thường do trình duyệt chặn fingerprint.',
+                    fixes: ['Tắt "Fingerprint blocking".', 'Tắt Strict Mode (Firefox/Brave).', 'Dùng Chrome với cài đặt mặc định.'],
+                    action: { label: 'Thử lại', fn: () => module.antiCheat.retryFingerprint() }
+                },
+                ERR_CAMP_NETWORK: {
+                    icon: 'ti-cloud-off', iconClass: 'orange',
+                    title: 'Lỗi kết nối máy chủ', subtitle: 'Không tải được dữ liệu chiến dịch',
+                    reason: 'Yêu cầu không đến được máy chủ. Mất mạng hoặc máy chủ bảo trì.',
+                    fixes: ['Kiểm tra kết nối internet.', 'Tải lại trang (F5).', 'Tắt VPN rồi thử lại.'],
+                    autoRetry: 5, action: { label: 'Tải lại trang', fn: () => window.location.reload() }
+                },
+                ERR_CAMP_INVALID_JSON: {
+                    icon: 'ti-file-x', iconClass: 'red',
+                    title: 'Dữ liệu không hợp lệ', subtitle: 'Máy chủ trả về dữ liệu lỗi',
+                    reason: 'Phản hồi từ máy chủ không đúng định dạng JSON.',
+                    fixes: ['Tải lại trang và thử lại.', 'Xóa cache trình duyệt.'],
+                    action: { label: 'Tải lại trang', fn: () => window.location.reload() }
+                },
+                ERR_CAMP_HTTP: {
+                    icon: 'ti-server', iconClass: 'red',
+                    title: 'Lỗi máy chủ', subtitle: 'HTTP error từ server',
+                    reason: 'Máy chủ trả về mã lỗi HTTP.',
+                    fixes: ['Tải lại trang sau 1–2 phút.', 'Kiểm tra link còn hợp lệ không.'],
+                    autoRetry: 10, action: { label: 'Tải lại trang', fn: () => window.location.reload() }
+                },
+                ERR_CODE_WRONG: {
+                    icon: 'ti-key', iconClass: 'red',
+                    title: 'Mã xác thực sai', subtitle: 'Mã không khớp với hệ thống',
+                    reason: 'Mã nhập không đúng, đã hết hạn hoặc lấy sai trang.',
+                    fixes: ['Kiểm tra lại mã — đúng 10 ký tự, không dấu cách.', 'Quay lại trang web và lấy mã mới.', 'Nhấn "Đổi camp" nếu mã hết hạn.'],
+                    action: { label: 'Nhập lại', fn: () => module.antiCheat.closeErrModal() }
+                },
+                ERR_CODE_SESSION_EXPIRED: {
+                    icon: 'ti-clock', iconClass: 'orange',
+                    title: 'Phiên đã hết hạn', subtitle: 'Cần tải lại để tiếp tục',
+                    reason: 'Phiên 10 phút đã hết. Cần tải lại trang để tạo phiên mới.',
+                    fixes: ['Nhấn nút bên dưới để tải lại.', 'Làm lại từ đầu theo hướng dẫn.'],
+                    action: { label: 'Tải lại ngay', fn: () => window.location.reload() }
+                },
+                ERR_CODE_TURNSTILE: {
+                    icon: 'ti-shield-exclamation', iconClass: 'orange',
+                    title: 'Xác minh Cloudflare thất bại', subtitle: 'Token Turnstile không hợp lệ',
+                    reason: 'Token Cloudflare Turnstile đã hết hạn hoặc không hợp lệ.',
+                    fixes: ['Tìm ô "Xác minh Cloudflare" và làm mới.', 'Tắt VPN rồi thử lại.'],
+                    action: { label: 'Đóng & xác minh lại', fn: () => module.antiCheat.closeErrModal() }
+                },
+                ERR_CODE_NETWORK: {
+                    icon: 'ti-cloud-off', iconClass: 'orange',
+                    title: 'Lỗi kết nối khi nộp mã', subtitle: 'Không gửi được yêu cầu',
+                    reason: 'Yêu cầu xác nhận mã không đến được máy chủ.',
+                    fixes: ['Kiểm tra kết nối internet.', 'Thử lại — mã vẫn còn hiệu lực.'],
+                    action: { label: 'Thử gửi lại', fn: () => module.antiCheat.closeErrModal() }
+                },
+                ERR_CODE_HTTP: {
+                    icon: 'ti-server', iconClass: 'red',
+                    title: 'Xác minh thất bại', subtitle: 'Máy chủ từ chối yêu cầu',
+                    reason: 'Máy chủ trả về lỗi khi xử lý mã xác nhận.',
+                    fixes: ['Đọc thông báo lỗi từ máy chủ.', 'Làm lại đúng hướng dẫn.', 'Nhấn "Đổi camp" nếu cần.'],
+                    action: { label: 'Đóng', fn: () => module.antiCheat.closeErrModal() }
+                },
+                ERR_CHANGE_NETWORK: {
+                    icon: 'ti-refresh', iconClass: 'orange',
+                    title: 'Lỗi khi đổi chiến dịch', subtitle: 'Không gửi được yêu cầu',
+                    reason: 'Yêu cầu đổi camp không đến được máy chủ.',
+                    fixes: ['Kiểm tra kết nối internet.', 'Thử nhấn "Đổi camp" lại.'],
+                    action: { label: 'Đóng', fn: () => module.antiCheat.closeErrModal() }
+                },
+                ERR_CHANGE_HTTP: {
+                    icon: 'ti-server', iconClass: 'red',
+                    title: 'Lỗi máy chủ khi đổi camp', subtitle: 'HTTP error từ server',
+                    reason: 'Máy chủ trả về lỗi khi xử lý yêu cầu đổi camp.',
+                    fixes: ['Tải lại trang và thử đổi camp lại.'],
+                    action: { label: 'Tải lại trang', fn: () => window.location.reload() }
+                },
+                ERR_REPORT_NETWORK: {
+                    icon: 'ti-flag', iconClass: 'orange',
+                    title: 'Lỗi gửi báo lỗi', subtitle: 'Không gửi được yêu cầu',
+                    reason: 'Yêu cầu báo lỗi không đến được máy chủ.',
+                    fixes: ['Kiểm tra kết nối internet.', 'Đóng và mở lại modal rồi gửi lại.'],
+                    action: { label: 'Đóng', fn: () => module.antiCheat.closeErrModal() }
+                },
+                ERR_UNKNOWN: {
+                    icon: 'ti-help-circle', iconClass: 'gray',
+                    title: 'Lỗi không xác định', subtitle: 'Sự cố không rõ nguyên nhân',
+                    reason: 'Hệ thống gặp lỗi không xác định. Có thể là lỗi tạm thời.',
+                    fixes: ['Tải lại trang và thử lại.', 'Xóa cache trình duyệt.'],
+                    action: { label: 'Tải lại trang', fn: () => window.location.reload() }
+                }
+            };
 
             module.state = {
                 humanDone: false,
                 sessionEnded: false,
                 isMobile: false,
-                violations: [],
                 TOTAL_MS: 10 * 60 * 1000,
                 sessionExpires: Date.now() + (10 * 60 * 1000),
                 timerId: null,
@@ -923,52 +1336,10 @@
                 dotReachRadius: 32,
                 mouseButtonDown: false,
                 resetTimeout: null,
-                isResetting: false,
-                networkInterval: null,
-                incognitoInterval: null,
-                devToolsInterval: null
+                isResetting: false
             };
 
             module.dom = {};
-
-            module.errorCatalog = {
-                ERR_CHEAT_DEVTOOLS: {
-                    icon: 'ti-code-off', iconClass: 'red',
-                    title: 'Phát hiện Developer Tools', subtitle: 'Hành vi can thiệp trái phép',
-                    reason: 'Hệ thống bảo mật ghi nhận bạn đang mở hoặc cố gắng mở bảng điều khiển nhà phát triển.',
-                    fixes: ['Đóng ngay lập tức bảng điều khiển F12 / Inspect.', 'Không cố gắng kiểm tra mã nguồn hệ thống.', 'Tải lại trang để khôi phục trạng thái.']
-                },
-                ERR_CHEAT_BLUR: {
-                    icon: 'ti-eye-off', iconClass: 'orange',
-                    title: 'Rời khỏi tab làm việc', subtitle: 'Yêu cầu duy trì tiêu điểm',
-                    reason: 'Hệ thống giao diện phát hiện bạn đã chuyển sang tab khác hoặc thu nhỏ trình duyệt.',
-                    fixes: ['Luôn giữ màn hình xác thực hoạt động liên tục.', 'Không chạy ngầm hoặc chuyển đổi ứng dụng.', 'Thực hiện lại captcha.']
-                },
-                ERR_CHEAT_AUTOMATION: {
-                    icon: 'ti-robot', iconClass: 'red',
-                    title: 'Phát hiện Công cụ / Antidetect', subtitle: 'Hành vi giả lập bị từ chối',
-                    reason: 'Trình duyệt đang được điều khiển bởi một công cụ tự động hóa hoặc trình duyệt Antidetect PC.',
-                    fixes: ['Tắt hoàn toàn các công cụ Selenium, Puppeteer, hoặc Antidetect Browser.', 'Chỉ sử dụng trình duyệt Chrome/Safari gốc không tiện ích can thiệp.']
-                },
-                ERR_VPN_PROXY: {
-                    icon: 'ti-shield-lock', iconClass: 'red',
-                    title: 'Phát hiện VPN / Proxy', subtitle: 'Mạng ẩn danh bị từ chối',
-                    reason: 'Hệ thống phát hiện kết nối mạng của bạn thông qua máy chủ riêng ảo (VPN) hoặc Cloudflare WARP.',
-                    fixes: ['Tắt hoàn toàn phần mềm thay đổi mạng.', 'Sử dụng mạng 4G/WiFi gốc của nhà mạng VN.', 'Tải lại trang sau khi đã ngắt kết nối ảo.']
-                },
-                ERR_EXTENSION_BLOCK: {
-                    icon: 'ti-puzzle-off', iconClass: 'orange',
-                    title: 'Phát hiện Tiện ích can thiệp', subtitle: 'Phát hiện Script chèn ép',
-                    reason: 'Trình duyệt đang chạy các tập lệnh tự động hóa bị ghi đè vào hệ thống lõi.',
-                    fixes: ['Vô hiệu hóa Tampermonkey / Violentmonkey.', 'Tắt các Tool Auto Click.', 'Sử dụng trình duyệt không cài tiện ích.']
-                },
-                ERR_INCOGNITO: {
-                    icon: 'ti-spy-off', iconClass: 'red',
-                    title: 'Chế độ Ẩn Danh Bị Cấm', subtitle: 'Truy cập không hợp lệ',
-                    reason: 'Nhiệm vụ này từ chối thực hiện trên tab ẩn danh PC/Mobile nhằm ngăn chặn lạm dụng.',
-                    fixes: ['Đóng tab ẩn danh hiện tại.', 'Mở một tab duyệt web thông thường.', 'Dán link nhiệm vụ vào tab bình thường để tiếp tục.']
-                }
-            };
 
             module.core = {
                 initDom: function() {
@@ -998,7 +1369,6 @@
                     d.toastBox = document.getElementById('toastBox');
                     d.mainAlertBox = document.getElementById('mainAlertBox');
                     d.globalOverlay = document.getElementById('globalOverlay');
-                    d.overlayText = document.getElementById('overlayText');
                     d.errModalOverlay = document.getElementById('errModalOverlay');
                     d.modalIconWrap = document.getElementById('modalIconWrap');
                     d.modalIcon = document.getElementById('modalIcon');
@@ -1008,7 +1378,6 @@
                     d.modalFixesList = document.getElementById('modalFixesList');
                     d.modalActionBtn = document.getElementById('modalActionBtn');
                     d.ctx = d.drawCanvas.getContext('2d');
-                    d.physicalBlocker = document.getElementById('physicalBlocker');
                 },
 
                 detectMobile: function() {
@@ -1020,23 +1389,17 @@
                 },
 
                 showToast: function(type, text) {
-                    if (module.state.violations.length > 0) return;
                     var toast = document.createElement('div');
                     toast.className = 'toast ' + type;
                     var icon = type === 'success' ? 'ti-circle-check-filled' : 'ti-alert-triangle-filled';
                     toast.innerHTML = '<i class="ti ' + icon + '"></i><span style="flex:1;font-weight:500;">' + text +
                         '</span><i class="ti ti-x" style="cursor:pointer;opacity:0.4;font-size:16px;" onclick="this.parentElement.remove()"></i>';
                     module.dom.toastBox.prepend(toast);
-                    _setTimeout(function() { if (toast.parentElement) toast.remove(); }, 3500);
+                    setTimeout(function() { if (toast.parentElement) toast.remove(); }, 3500);
                 },
 
-                toggleOverlay: function(show, text) {
-                    if (module.state.violations.length > 0) {
-                        module.dom.globalOverlay.classList.remove('active');
-                        return;
-                    }
+                toggleOverlay: function(show) {
                     if (show) {
-                        if (text) module.dom.overlayText.textContent = text;
                         module.dom.globalOverlay.classList.add('active');
                     } else {
                         module.dom.globalOverlay.classList.remove('active');
@@ -1046,7 +1409,6 @@
                 updateSubmitBtn: function() {
                     var s = module.state;
                     var d = module.dom;
-                    if (s.violations.length > 0) return;
                     if (s.sessionEnded) {
                         d.btnSubmit.disabled = true;
                         d.btnSubmit.innerHTML = '<i class="ti ti-lock"></i> Phiên đã hết hạn';
@@ -1064,7 +1426,7 @@
                 markHumanDone: function() {
                     var s = module.state;
                     var d = module.dom;
-                    if (s.violations.length > 0 || s.humanDone) return;
+                    if (s.humanDone) return;
                     s.humanDone = true;
                     s.isDrawing = false;
                     s.mouseButtonDown = false;
@@ -1084,6 +1446,9 @@
                         d.shakeBox.style.opacity = '0.7';
                         d.shakeBox.style.borderColor = '#059669';
                         d.shakeBox.style.background = '#f0fdf4';
+                        if (s.motionHandler) window.removeEventListener('devicemotion', s.motionHandler);
+                        d.shakeBox.querySelector('.shake-title').textContent = 'Đã xác minh!';
+                        d.shakeBox.querySelector('.shake-sub').textContent = 'Cảm ơn bạn đã xác minh';
                     } else {
                         d.captchaDrawArea.classList.add('success');
                         d.captchaDrawArea.classList.remove('active', 'failed');
@@ -1092,7 +1457,7 @@
                         d.captchaDrawArea.style.cursor = 'default';
                         d.dotMarkers.style.display = 'none';
                         d.drawGuideSvg.style.display = 'none';
-                        if (d.btnReloadCaptcha) d.btnReloadCaptcha.style.display = 'none';
+                        d.btnReloadCaptcha.style.display = 'none';
                         d.promptIcon.className = 'ti ti-check';
                         d.promptTitle.textContent = 'Xác minh thành công!';
                         d.promptDesc.textContent = 'Tất cả 4 điểm đã được kết nối';
@@ -1125,11 +1490,7 @@
                     d.sessionBar.style.backgroundColor = '#ef4444';
                     d.timeDisplay.innerText = timeLeft + 's';
                     d.sessionBar.style.width = '100%';
-                    var cleanupInterval = window.setInterval(function() {
-                        if (module.state.violations.length > 0) {
-                            clearInterval(cleanupInterval);
-                            return;
-                        }
+                    var cleanupInterval = setInterval(function() {
                         timeLeft--;
                         if (timeLeft > 0) {
                             d.timeDisplay.innerText = timeLeft + 's';
@@ -1146,12 +1507,12 @@
                 updateTimer: function() {
                     var s = module.state;
                     var d = module.dom;
-                    if (s.violations.length > 0) return;
                     var now = Date.now();
                     var rem = s.sessionExpires - now;
                     if (rem <= 0) {
                         clearInterval(s.timerId);
                         s.sessionEnded = true;
+                        FishXAntiCheat.endSession();
                         d.btnSubmit.disabled = true;
                         d.mainAlertBox.style.borderLeftColor = 'var(--danger)';
                         d.mainAlertBox.style.backgroundColor = '#fee2e2';
@@ -1177,32 +1538,26 @@
 
                 initTimer: function() {
                     var s = module.state;
-                    s.timerId = window.setInterval(module.core.updateTimer, 1000);
+                    s.timerId = setInterval(module.core.updateTimer, 1000);
                     module.core.updateTimer();
                 },
 
                 initSubmitBtn: function() {
-                    module.dom.btnSubmit.addEventListener('click', function(e) {
-                        if (!e.isTrusted) return;
+                    module.dom.btnSubmit.addEventListener('click', function() {
                         var s = module.state;
-                        if (s.violations.length > 0 || s.sessionEnded || !s.humanDone || Date.now() >= s.sessionExpires) return;
+                        if (s.sessionEnded || !s.humanDone || Date.now() >= s.sessionExpires) return;
                         this.disabled = true;
-                        this.innerHTML = '<i class="ti ti-loader-2" style="animation:spin 0.7s linear infinite;font-size:18px;"></i> Đang quét bảo mật 3s...';
-                        module.core.toggleOverlay(true, 'Đang phân tích tính toàn vẹn...');
-                        
-                        _setTimeout(function() {
-                            if (module.state.violations.length > 0) {
-                                module.core.toggleOverlay(false);
-                                return;
-                            }
+                        this.innerHTML = '<i class="ti ti-loader-2" style="animation:spin 0.7s linear infinite;font-size:18px;"></i> Đang xử lý...';
+                        module.core.toggleOverlay(true);
+                        setTimeout(function() {
                             module.core.showToast('success', 'Đang chuyển hướng...');
                             module.dom.btnSubmit.style.background = 'var(--primary-dark)';
                             module.dom.btnSubmit.innerHTML = '<i class="ti ti-check"></i> Đã hoàn tất';
                             module.core.toggleOverlay(false);
-                            _setTimeout(function() {
+                            setTimeout(function() {
                                 window.location.href = "https://cat.com";
                             }, 500);
-                        }, 3000);
+                        }, 1200);
                     });
                 }
             };
@@ -1312,7 +1667,7 @@
                     var s = module.state;
                     var d = module.dom;
                     d.captchaDrawArea.style.display = 'flex';
-                    if (d.shakeBox) d.shakeBox.style.display = 'none';
+                    d.shakeBox.style.display = 'none';
 
                     module.pcCaptcha.resizeCanvas();
                     module.pcCaptcha.generateRandomDots();
@@ -1330,44 +1685,39 @@
                     d.drawCanvas.addEventListener('touchend', module.pcCaptcha.handleTouchEnd);
                     d.drawCanvas.addEventListener('touchcancel', module.pcCaptcha.handleTouchEnd);
 
-                    if (d.btnReloadCaptcha) {
-                        d.btnReloadCaptcha.addEventListener('click', function(e) {
-                            if (!e.isTrusted) return;
-                            e.stopPropagation();
-                            if (s.violations.length > 0 || s.humanDone || s.isResetting) return;
-                            d.ctx.clearRect(0, 0, d.drawCanvas.width, d.drawCanvas.height);
-                            s.drawingPts = [];
-                            s.drawingTimes = [];
-                            s.dotsReached = new Array(s.totalDots).fill(false);
-                            s.currentTargetDot = 1;
-                            s.hasStartedFromDot1 = false;
-                            module.pcCaptcha.generateRandomDots();
-                            module.pcCaptcha.drawDotMarkers();
-                            module.pcCaptcha.drawGuideLine();
-                            d.promptIcon.className = 'ti ti-pencil';
-                            d.promptTitle.textContent = 'Chạm vào điểm 1 rồi kéo qua 4 điểm';
-                            d.promptDesc.textContent = 'Bắt đầu từ điểm sáng số 1, giữ chuột trái và kéo thẳng';
-                            d.captchaPrompt.style.opacity = '1';
-                            module.core.showToast('success', 'Đã làm mới vị trí các điểm xác minh!');
-                        });
-                    }
+                    d.btnReloadCaptcha.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        if (s.humanDone || s.isResetting) return;
+                        d.ctx.clearRect(0, 0, d.drawCanvas.width, d.drawCanvas.height);
+                        s.drawingPts = [];
+                        s.drawingTimes = [];
+                        s.dotsReached = new Array(s.totalDots).fill(false);
+                        s.currentTargetDot = 1;
+                        s.hasStartedFromDot1 = false;
+                        module.pcCaptcha.generateRandomDots();
+                        module.pcCaptcha.drawDotMarkers();
+                        module.pcCaptcha.drawGuideLine();
+                        d.promptIcon.className = 'ti ti-pencil';
+                        d.promptTitle.textContent = 'Chạm vào điểm 1 rồi kéo qua 4 điểm';
+                        d.promptDesc.textContent = 'Bắt đầu từ điểm sáng số 1, giữ chuột trái và kéo';
+                        d.captchaPrompt.style.opacity = '1';
+                        module.core.showToast('success', 'Đã làm mới vị trí các điểm xác minh!');
+                    });
 
                     document.addEventListener('mouseup', function(e) {
-                        if (s.violations.length > 0) return;
                         if (s.isDrawing && !s.isMobile && s.mouseButtonDown) {
                             module.pcCaptcha.handleMouseUp(e);
                         }
                     });
 
                     d.captchaDrawArea.addEventListener('mouseleave', function(e) {
-                        if (s.violations.length > 0) return;
                         if (s.isDrawing && s.mouseButtonDown) {
                             module.pcCaptcha.handleMouseUp(e);
                         }
                     });
 
                     window.addEventListener('resize', function() {
-                        if (s.violations.length > 0 || s.isMobile || s.humanDone) return;
+                        if (s.isMobile || s.humanDone) return;
                         module.pcCaptcha.resizeCanvas();
                         module.pcCaptcha.generateRandomDots();
                         module.pcCaptcha.drawDotMarkers();
@@ -1422,45 +1772,6 @@
                     return dist < s.dotReachRadius;
                 },
 
-                checkDeviation: function(pos) {
-                    var s = module.state;
-                    if (s.currentTargetDot > s.totalDots || s.currentTargetDot < 2) return false;
-                    var p1 = s.dotPositions[s.currentTargetDot - 2];
-                    var p2 = s.dotPositions[s.currentTargetDot - 1];
-
-                    var A = pos.x - p1.x;
-                    var B = pos.y - p1.y;
-                    var C = p2.x - p1.x;
-                    var D = p2.y - p1.y;
-
-                    var dot = A * C + B * D;
-                    var len_sq = C * C + D * D;
-                    var param = -1;
-                    if (len_sq !== 0) param = dot / len_sq;
-
-                    var xx, yy;
-                    if (param < 0) {
-                        xx = p1.x;
-                        yy = p1.y;
-                    } else if (param > 1) {
-                        xx = p2.x;
-                        yy = p2.y;
-                    } else {
-                        xx = p1.x + param * C;
-                        yy = p1.y + param * D;
-                    }
-
-                    var dx = pos.x - xx;
-                    var dy = pos.y - yy;
-                    var dist = Math.sqrt(dx * dx + dy * dy);
-
-                    if (dist > 35) {
-                        module.pcCaptcha.resetCaptcha('Đường vẽ bị lệch! Vui lòng kéo thẳng theo nét đứt.');
-                        return true;
-                    }
-                    return false;
-                },
-
                 checkDotReach: function(pos) {
                     var s = module.state;
                     if (s.currentTargetDot > s.totalDots) return;
@@ -1471,7 +1782,7 @@
                         module.pcCaptcha.drawDotMarkers();
                         module.pcCaptcha.drawGuideLine();
                         if (s.currentTargetDot > s.totalDots) {
-                            _setTimeout(function() { module.core.markHumanDone(); }, 150);
+                            setTimeout(function() { module.core.markHumanDone(); }, 150);
                         } else {
                             module.dom.promptTitle.textContent = 'Tốt! Tiếp tục đến điểm ' + s.currentTargetDot;
                             module.dom.promptDesc.textContent = 'Kéo chuột đến điểm đang phát sáng';
@@ -1482,7 +1793,7 @@
                 resetCaptcha: function(reason) {
                     var s = module.state;
                     var d = module.dom;
-                    if (s.violations.length > 0 || s.isResetting) return;
+                    if (s.isResetting) return;
                     s.isResetting = true;
                     s.isDrawing = false;
                     s.mouseButtonDown = false;
@@ -1502,14 +1813,13 @@
                     d.promptDesc.textContent = 'Bạn mới đến điểm ' + (s.currentTargetDot - 1) + '/4, vẽ lại từ điểm 1';
                     
                     if (forceShuffle) {
-                        module.antiCheat.triggerViolation('ERR_CHEAT_AUTOMATION');
-                        return;
+                        // KÍCH HOẠT PHẠT TỪ FishXAntiCheat NẾU PHÁT HIỆN TOOL AUTO
+                        FishXAntiCheat.trigger('ERR_CHEAT_AUTOMATION');
                     } else {
-                        module.core.showToast('error', 'Lỗi: ' + (reason || 'Chưa hoàn thành!'));
+                        module.core.showToast('error', 'Bạn mới đến điểm ' + (s.currentTargetDot - 1) + '/4, vẽ lại từ điểm 1');
                     }
 
-                    s.resetTimeout = _setTimeout(function() {
-                        if (s.violations.length > 0) return;
+                    s.resetTimeout = setTimeout(function() {
                         d.captchaDrawArea.classList.remove('failed');
                         d.ctx.clearRect(0, 0, d.drawCanvas.width, d.drawCanvas.height);
                         s.drawingPts = [];
@@ -1529,7 +1839,7 @@
                         module.pcCaptcha.drawGuideLine();
                         d.promptIcon.className = 'ti ti-pencil';
                         d.promptTitle.textContent = 'Chạm vào điểm 1 rồi kéo qua 4 điểm';
-                        d.promptDesc.textContent = 'Bắt đầu từ điểm sáng số 1, giữ chuột trái và kéo thẳng';
+                        d.promptDesc.textContent = 'Bắt đầu từ điểm sáng số 1, giữ chuột trái và kéo';
                         d.captchaPrompt.style.opacity = '1';
                     }, 1800);
                 },
@@ -1537,7 +1847,6 @@
                 startDrawing: function(pos) {
                     var s = module.state;
                     var d = module.dom;
-                    if (s.violations.length > 0) return;
                     s.isDrawing = true;
                     s.hasStartedFromDot1 = true;
                     s.drawingPts = [];
@@ -1553,14 +1862,13 @@
                     module.pcCaptcha.drawGuideLine();
                     d.captchaPrompt.style.opacity = '0.35';
                     d.promptTitle.textContent = 'Đang vẽ... Đi đến điểm 1';
-                    d.promptDesc.textContent = 'Giữ chuột trái và kéo thẳng qua 4 điểm';
+                    d.promptDesc.textContent = 'Giữ chuột trái và kéo qua 4 điểm';
                     module.pcCaptcha.checkDotReach(pos);
                 },
 
                 handleMouseDown: function(e) {
-                    if (!e.isTrusted) return;
                     var s = module.state;
-                    if (s.violations.length > 0 || s.humanDone || s.isMobile || s.isResetting) return;
+                    if (s.humanDone || s.isMobile || s.isResetting) return;
                     if (e.button !== 0) return;
                     e.preventDefault();
                     e.stopPropagation();
@@ -1574,8 +1882,8 @@
                         document.getElementById('promptDesc').textContent = 'Nhấn giữ chuột trái vào điểm sáng số 1';
                         module.core.showToast('error', 'Phải bắt đầu từ điểm số 1!');
                         s.mouseButtonDown = false;
-                        _setTimeout(function() {
-                            if (s.violations.length > 0 || s.humanDone) return;
+                        setTimeout(function() {
+                            if (s.humanDone) return;
                             document.getElementById('captchaDrawArea').classList.remove('failed');
                             document.getElementById('promptIcon').className = 'ti ti-pencil';
                             document.getElementById('promptTitle').textContent = 'Chạm vào điểm 1 rồi kéo qua 4 điểm';
@@ -1587,16 +1895,14 @@
                 },
 
                 handleMouseMove: function(e) {
-                    if (!e.isTrusted) return;
                     var s = module.state;
-                    if (s.violations.length > 0 || !s.isDrawing || s.humanDone || s.isMobile || s.isResetting) return;
+                    if (!s.isDrawing || s.humanDone || s.isMobile || s.isResetting) return;
                     if (!s.mouseButtonDown) {
                         module.pcCaptcha.handleMouseUp(e);
                         return;
                     }
                     e.preventDefault();
                     var p = module.pcCaptcha.getCanvasPos(e);
-                    if (module.pcCaptcha.checkDeviation(p)) return;
                     s.drawingPts.push(p);
                     s.drawingTimes.push(Date.now());
                     module.pcCaptcha.redrawCanvas();
@@ -1604,9 +1910,8 @@
                 },
 
                 handleMouseUp: function(e) {
-                    if (!e.isTrusted) return;
                     var s = module.state;
-                    if (s.violations.length > 0 || !s.isDrawing || s.humanDone || s.isMobile) return;
+                    if (!s.isDrawing || s.humanDone || s.isMobile) return;
                     s.mouseButtonDown = false;
                     s.isDrawing = false;
                     if (s.currentTargetDot <= s.totalDots) {
@@ -1616,16 +1921,14 @@
 
                 handleMouseLeave: function(e) {
                     var s = module.state;
-                    if (s.violations.length > 0) return;
                     if (s.isDrawing && s.mouseButtonDown && !s.humanDone && !s.isMobile) {
                         module.pcCaptcha.handleMouseUp(e);
                     }
                 },
 
                 handleTouchStart: function(e) {
-                    if (!e.isTrusted) return;
                     var s = module.state;
-                    if (s.violations.length > 0 || s.humanDone || s.isMobile || s.isResetting) return;
+                    if (s.humanDone || s.isMobile || s.isResetting) return;
                     e.preventDefault();
                     var p = module.pcCaptcha.getCanvasPos(e);
                     if (!module.pcCaptcha.isNearDot(p, 0)) {
@@ -1634,8 +1937,8 @@
                         document.getElementById('promptIcon').className = 'ti ti-exclamation-circle';
                         document.getElementById('promptTitle').textContent = 'Phải bắt đầu từ điểm 1!';
                         document.getElementById('promptDesc').textContent = 'Chạm vào điểm sáng số 1 để bắt đầu';
-                        _setTimeout(function() {
-                            if (s.violations.length > 0 || s.humanDone) return;
+                        setTimeout(function() {
+                            if (s.humanDone) return;
                             document.getElementById('captchaDrawArea').classList.remove('failed');
                             document.getElementById('promptIcon').className = 'ti ti-pencil';
                             document.getElementById('promptTitle').textContent = 'Chạm vào điểm 1 rồi kéo qua 4 điểm';
@@ -1647,12 +1950,10 @@
                 },
 
                 handleTouchMove: function(e) {
-                    if (!e.isTrusted) return;
                     var s = module.state;
-                    if (s.violations.length > 0 || !s.isDrawing || s.humanDone || s.isMobile || s.isResetting) return;
+                    if (!s.isDrawing || s.humanDone || s.isMobile || s.isResetting) return;
                     e.preventDefault();
                     var p = module.pcCaptcha.getCanvasPos(e);
-                    if (module.pcCaptcha.checkDeviation(p)) return;
                     s.drawingPts.push(p);
                     s.drawingTimes.push(Date.now());
                     module.pcCaptcha.redrawCanvas();
@@ -1660,9 +1961,8 @@
                 },
 
                 handleTouchEnd: function(e) {
-                    if (!e.isTrusted) return;
                     var s = module.state;
-                    if (s.violations.length > 0 || !s.isDrawing || s.humanDone || s.isMobile) return;
+                    if (!s.isDrawing || s.humanDone || s.isMobile) return;
                     s.isDrawing = false;
                     if (s.currentTargetDot <= s.totalDots) {
                         module.pcCaptcha.resetCaptcha('Chưa hoàn thành! Cần qua đủ 4 điểm');
@@ -1674,12 +1974,11 @@
                 initMobileCaptcha: function() {
                     var d = module.dom;
                     d.captchaDrawArea.style.display = 'none';
-                    if (d.shakeBox) d.shakeBox.style.display = 'flex';
+                    d.shakeBox.style.display = 'flex';
 
                     if (typeof DeviceMotionEvent !== 'undefined') {
                         if (typeof DeviceMotionEvent.requestPermission === 'function') {
-                            d.shakeBox.addEventListener('click', function askPerm(e) {
-                                if (!e.isTrusted || module.state.violations.length > 0) return;
+                            d.shakeBox.addEventListener('click', function askPerm() {
                                 DeviceMotionEvent.requestPermission().then(function(state) {
                                     if (state === 'granted') {
                                         module.mobiCaptcha.startMotion();
@@ -1708,7 +2007,7 @@
                     d.shakeBox.querySelector('.shake-sub').textContent = 'Lắc mạnh 3 lần để xác minh';
                     var lastX = null, lastY = null, lastZ = null;
                     s.motionHandler = function(e) {
-                        if (s.violations.length > 0 || s.humanDone || s.sessionEnded) return;
+                        if (s.humanDone || s.sessionEnded) return;
                         var a = e.accelerationIncludingGravity;
                         if (!a || a.x === null) return;
                         var x = a.x || 0, y = a.y || 0, z = a.z || 0;
@@ -1733,7 +2032,6 @@
                 updateShakeUI: function() {
                     var s = module.state;
                     var d = module.dom;
-                    if (s.violations.length > 0) return;
                     var pct = Math.min((s.shakeCount / s.NEED_SHAKES) * 100, 100);
                     d.shakeFill.style.width = pct + '%';
                     d.shakeCountText.textContent = s.shakeCount + ' / ' + s.NEED_SHAKES + ' lần lắc';
@@ -1747,7 +2045,7 @@
                     }
                     if (s.shakeCount > 0 && s.shakeCount < s.NEED_SHAKES) {
                         d.shakeBox.classList.add('shaking');
-                        _setTimeout(function() { d.shakeBox.classList.remove('shaking'); }, 200);
+                        setTimeout(function() { d.shakeBox.classList.remove('shaking'); }, 200);
                     }
                 },
 
@@ -1756,15 +2054,11 @@
                     var s = module.state;
                     d.shakeBox.innerHTML = '<div class="shake-icon-wrap"><i class="ti ti-hand-click"></i></div><div class="shake-title">Chạm nhanh 3 lần</div><div class="shake-sub">Chạm vào đây 3 lần để xác minh</div><div class="shake-dots" id="shakeDots"><div class="shake-dot"></div><div class="shake-dot"></div><div class="shake-dot"></div></div><div class="shake-bar"><div class="shake-bar-fill" id="shakeFill" style="width:0%"></div></div><div class="shake-count" id="shakeCountText">0 / 3 lần chạm</div>';
                     var taps = 0;
-                    var lastTapTime = 0;
                     var shakeFillEl = document.getElementById('shakeFill');
                     var shakeCountTextEl = document.getElementById('shakeCountText');
                     var shakeDotsEl = document.getElementById('shakeDots');
-                    d.shakeBox.addEventListener('click', function(e) {
-                        if (!e.isTrusted || s.violations.length > 0 || s.humanDone || s.sessionEnded) return;
-                        var now = Date.now();
-                        if (now - lastTapTime < 150) return;
-                        lastTapTime = now;
+                    d.shakeBox.addEventListener('click', function() {
+                        if (s.humanDone || s.sessionEnded) return;
                         taps++;
                         s.shakeCount = taps;
                         var pct = Math.min((taps / s.NEED_SHAKES) * 100, 100);
@@ -1782,224 +2076,14 @@
                 }
             };
 
+            // GIỮ LẠI CÁC HÀM TIỆN ÍCH DÀNH CHO ERROR CATALOG CỦA FISHX
             module.antiCheat = {
-                renderModal: function() {
-                    var d = module.dom;
-                    var s = module.state;
-                    var overlay = d.errModalOverlay;
-                    if (!overlay) return;
-
-                    d.modalFixesList.innerHTML = '';
-                    d.modalReason.innerHTML = '';
-
-                    if (s.violations.length === 1) {
-                        var err = module.errorCatalog[s.violations[0]];
-                        if (!err) return;
-                        d.modalIconWrap.className = 'modal-icon-wrap ' + err.iconClass;
-                        d.modalIcon.className = 'ti ' + err.icon;
-                        d.modalTitle.textContent = err.title;
-                        d.modalSubtitle.textContent = err.subtitle;
-                        d.modalReason.innerHTML = err.reason;
-                        err.fixes.forEach(function(fix) {
-                            var item = document.createElement('div');
-                            item.className = 'modal-fix-item';
-                            item.innerHTML = '<i class="ti ti-circle-check-filled"></i><span>' + fix + '</span>';
-                            d.modalFixesList.appendChild(item);
-                        });
-                    } else {
-                        d.modalIconWrap.className = 'modal-icon-wrap red';
-                        d.modalIcon.className = 'ti ti-shield-x';
-                        d.modalTitle.textContent = 'Đa Vi Phạm (' + s.violations.length + ')';
-                        d.modalSubtitle.textContent = 'Hệ thống ghi nhận ' + s.violations.length + ' hành vi gian lận';
-
-                        var combinedReason = '';
-                        var allFixes = [];
-                        s.violations.forEach(function(vKey, index) {
-                            var e = module.errorCatalog[vKey];
-                            if (!e) return;
-                            combinedReason += '<strong>' + (index + 1) + '. ' + e.title + ':</strong> ' + e.reason + '<br><br>';
-                            e.fixes.forEach(function(f) {
-                                if (allFixes.indexOf(f) === -1) allFixes.push(f);
-                            });
-                        });
-
-                        d.modalReason.innerHTML = combinedReason;
-                        allFixes.forEach(function(fix) {
-                            var item = document.createElement('div');
-                            item.className = 'modal-fix-item';
-                            item.innerHTML = '<i class="ti ti-circle-check-filled"></i><span>' + fix + '</span>';
-                            d.modalFixesList.appendChild(item);
-                        });
-                    }
-
-                    d.modalActionBtn.textContent = 'Tải lại trang';
-                    d.modalActionBtn.onclick = function() { window.location.reload(); };
-                    overlay.classList.add('active');
+                closeErrModal: function() {
+                    module.dom.errModalOverlay.classList.remove('active');
                 },
-
-                triggerViolation: function(errKey) {
-                    var s = module.state;
-                    var isNew = s.violations.indexOf(errKey) === -1;
-                    if (!isNew) return;
-
-                    s.violations.push(errKey);
-                    
-                    document.body.classList.add('violated');
-                    var d = module.dom;
-                    if (d.physicalBlocker) d.physicalBlocker.style.display = 'block';
-                    if (d.btnSubmit) d.btnSubmit.disabled = true;
-
-                    if (s.motionHandler) {
-                        window.removeEventListener('devicemotion', s.motionHandler);
-                    }
-
-                    module.antiCheat.renderModal();
-                },
-
-                checkIncognito: function() {
-                    var fs = window.RequestFileSystem || window.webkitRequestFileSystem;
-                    if (fs) {
-                        fs(window.TEMPORARY, 100, function() {}, function() { module.antiCheat.triggerViolation('ERR_INCOGNITO'); });
-                    }
-                    if (navigator.storage && navigator.storage.estimate) {
-                        navigator.storage.estimate().then(function(est) {
-                            if (est.quota > 0 && est.quota < 120 * 1024 * 1024) module.antiCheat.triggerViolation('ERR_INCOGNITO');
-                        }).catch(function() {});
-                    }
-                    try {
-                        if (window.indexedDB === null || window.indexedDB === undefined) {
-                            module.antiCheat.triggerViolation('ERR_INCOGNITO');
-                        } else {
-                            var req = indexedDB.open('__fx_probe__');
-                            req.onerror = function() { module.antiCheat.triggerViolation('ERR_INCOGNITO'); };
-                            req.onsuccess = function() {
-                                try { indexedDB.deleteDatabase('__fx_probe__'); } catch(e) {}
-                            };
-                        }
-                    } catch(e) { module.antiCheat.triggerViolation('ERR_INCOGNITO'); }
-                    try {
-                        localStorage.setItem('__fx__', '1');
-                        localStorage.removeItem('__fx__');
-                    } catch(e) { module.antiCheat.triggerViolation('ERR_INCOGNITO'); }
-                    try {
-                        sessionStorage.setItem('__fx__', '1');
-                        sessionStorage.removeItem('__fx__');
-                    } catch(e) { module.antiCheat.triggerViolation('ERR_INCOGNITO'); }
-                    if (window.caches) {
-                        caches.keys().catch(function() { module.antiCheat.triggerViolation('ERR_INCOGNITO'); });
-                    }
-                    if (typeof navigator.cookieEnabled !== 'undefined' && !navigator.cookieEnabled) {
-                        module.antiCheat.triggerViolation('ERR_INCOGNITO');
-                    }
-                    if ('serviceWorker' in navigator) {
-                        navigator.serviceWorker.getRegistrations().catch(function() { module.antiCheat.triggerViolation('ERR_INCOGNITO'); });
-                    }
-                    try {
-                        var channel = new BroadcastChannel('__fx_bc__');
-                        channel.close();
-                    } catch(e) {
-                        module.antiCheat.triggerViolation('ERR_INCOGNITO');
-                    }
-                },
-                
-                runNetworkCheck: function() {
-                    var urls = [
-                        'https://cloudflare.com/cdn-cgi/trace',
-                        'https://1.1.1.1/cdn-cgi/trace'
-                    ];
-                    urls.forEach(function(url) {
-                        window.fetch(url + '?t=' + Date.now(), { mode: 'cors', cache: 'no-store' })
-                            .then(function(res) { if (!res.ok) throw new Error(); return res.text(); })
-                            .then(function(data) {
-                                if (data.indexOf('warp=on') !== -1 || data.indexOf('warp=plus') !== -1) {
-                                    module.antiCheat.triggerViolation('ERR_VPN_PROXY');
-                                }
-                                var match = data.match(/loc=([A-Z]+)/);
-                                if (match && match[1] !== 'VN') {
-                                    module.antiCheat.triggerViolation('ERR_VPN_PROXY');
-                                }
-                            }).catch(function() {});
-                    });
-                },
-
-                initAntiCheat: function() {
-                    module.antiCheat.checkIncognito();
-                    module.antiCheat.runNetworkCheck();
-                    
-                    module.state.networkCheckInterval = window.setInterval(module.antiCheat.runNetworkCheck, 3000);
-                    window.setInterval(module.antiCheat.checkIncognito, 5000);
-
-                    document.addEventListener('keydown', function(e) {
-                        var blocked = e.key === 'F12' || 
-                            (e.ctrlKey && e.shiftKey && ['I', 'J', 'C', 'K'].indexOf(e.key) !== -1) || 
-                            (e.ctrlKey && ['U', 'S'].indexOf(e.key) !== -1) || 
-                            (e.metaKey && e.altKey && ['I', 'J', 'C'].indexOf(e.key) !== -1);
-                        if (blocked) {
-                            e.preventDefault();
-                            e.stopImmediatePropagation();
-                            module.antiCheat.triggerViolation('ERR_CHEAT_DEVTOOLS');
-                        }
-                    }, true);
-
-                    document.addEventListener('contextmenu', function(e) { 
-                        e.preventDefault(); 
-                    });
-
-                    window.addEventListener('blur', function() {
-                        if (!module.state.sessionEnded) {
-                            module.antiCheat.triggerViolation('ERR_CHEAT_BLUR');
-                        }
-                    });
-
-                    document.addEventListener('visibilitychange', function() {
-                        if (document.hidden && !module.state.sessionEnded) {
-                            module.antiCheat.triggerViolation('ERR_CHEAT_BLUR');
-                        }
-                    });
-
-                    var isWebDriver = navigator.webdriver || 
-                        document.documentElement.getAttribute('webdriver') || 
-                        window._phantom || 
-                        window.__nightmare || 
-                        window.callPhantom || 
-                        window.Buffer || 
-                        (window.chrome && window.chrome.runtime && Object.keys(window.chrome.runtime).length === 0);
-                    if (isWebDriver) {
-                        module.antiCheat.triggerViolation('ERR_CHEAT_AUTOMATION');
-                    }
-
-                    var tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-                    if (tz !== 'Asia/Ho_Chi_Minh' && tz !== 'Asia/Saigon' && tz !== 'Asia/Bangkok' && tz !== 'Asia/Vientiane') {
-                        module.antiCheat.triggerViolation('ERR_VPN_PROXY');
-                    }
-
-                    if (!module.state.isMobile) {
-                        var devToolsOpen = false;
-                        function detectViaDebugger() {
-                            var before = Date.now();
-                            debugger;
-                            var after = Date.now();
-                            if (after - before > 100) {
-                                if (!devToolsOpen) {
-                                    devToolsOpen = true;
-                                    module.antiCheat.triggerViolation('ERR_CHEAT_DEVTOOLS');
-                                }
-                            } else {
-                                devToolsOpen = false;
-                            }
-                        }
-
-                        function detectViaSize() {
-                            var widthThreshold = window.outerWidth - window.innerWidth > 160;
-                            var heightThreshold = window.outerHeight - window.innerHeight > 160;
-                            if (window.outerWidth > 0 && (widthThreshold || heightThreshold)) {
-                                module.antiCheat.triggerViolation('ERR_CHEAT_DEVTOOLS');
-                            }
-                        }
-
-                        window.setInterval(detectViaDebugger, 1500);
-                        window.setInterval(detectViaSize, 1000);
-                    }
+                retryFingerprint: function() {
+                    module.antiCheat.closeErrModal();
+                    module.core.showToast('success', 'Đang thiết lập lại cấu hình định danh thiết bị...');
                 }
             };
 
@@ -2008,7 +2092,10 @@
                 module.core.detectMobile();
                 module.core.clearUrlData();
                 module.core.initTimer();
-                module.antiCheat.initAntiCheat();
+                
+                // KHỞI CHẠY ANTI-CHEAT MODULE ĐỘC LẬP
+                FishXAntiCheat.init();
+                
                 module.core.initSubmitBtn();
                 module.core.updateSubmitBtn();
 
