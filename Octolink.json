@@ -1,6 +1,7 @@
 {
   "enabled": true,
   "redirect": {
-    "100-2": "ltd-studio.nl"
+    "100-2": "ltd-studio.nl",
+    "220-2": "catwifhat.io"
   }
 }
