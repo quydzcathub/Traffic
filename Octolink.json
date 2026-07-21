@@ -1,0 +1,6 @@
+{
+  "enabled": true,
+  "redirect": {
+    "141-2": "votic.io"
+  }
+}
